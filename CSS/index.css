@@ -1,6 +1,6 @@
 .st3 {
   stroke-dasharray: 500;
-  animation: dash 10s linear infinite;;
+  animation: dash 7s linear infinite;
 }
 
 @keyframes dash {
@@ -11,4 +11,6 @@
 .Name {
 	width: 50%;
 	height: 50%;
+	margin: 0 auto;
+	display: block;
 }
