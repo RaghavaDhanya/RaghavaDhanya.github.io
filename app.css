@@ -78,7 +78,7 @@
 }
 .mdc-card{
   margin: 5px;
-  width: 75%;
+  width: 90%;
 }
 .img-responsive {
     max-width: 100%;
@@ -88,9 +88,9 @@
 }
 #profile-pic{
   margin: 0 auto;
-  margin-top:-15%;
-  width:256px;
-  height:256px;
+  margin-top:-5%;
+  width:160px;
+  height:160px;
   border:8px solid; 
   border-radius: 100%;
   background: url(2_w_c.jpg);
@@ -101,7 +101,7 @@
 }
 @media screen and (max-width: 600px) {
 #profile-pic{
-  margin-top: -30%;
+  margin-top: -20%;
 }
 
   }
