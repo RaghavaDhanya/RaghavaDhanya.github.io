@@ -1,0 +1,112 @@
+:root {
+    --mdc-theme-primary: #ee534f;
+    --mdc-theme-accent:#3fc6ca;
+    --mdc-theme-background:#424242;
+  }
+ html,body {
+ 	background: #303030;
+ }
+ #header .mdc-toolbar__section {
+  overflow: visible;
+}
+#nav-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 40px;
+  text-decoration: none;
+}
+
+#nav-icon:visited,
+#nav-icon:active,
+#nav-icon:focus,
+#nav-icon {
+  color: var(--mdc-theme-text-primary-on-primary,#EEEEEE);
+}
+
+#nav-menu {
+  text-transform: uppercase;
+  padding-left: 16px;
+}
+
+#nav-menu .mdc-temporary-drawer__drawer {
+/*  background-color: #fafafa;
+*/}
+
+#nav-menu .mdc-temporary-drawer__header {
+  /*background: url(assets/logo.png) 32px 32px no-repeat;*/
+  background-size: 30%;
+}
+
+#nav-menu .mdc-temporary-drawer__header::before {
+  padding-top: 40%;
+}
+
+/*#nav-menu .mdc-temporary-drawer__content {
+  background: url(assets/diamond.svg) -32px bottom no-repeat;
+  background-size: 50%;
+}
+*/
+#nav-menu .mdc-list-item {
+  height: 32px;
+  margin-left: 32px;
+  letter-spacing: .2em;
+}
+
+.app-fab--absolute {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+@media(min-width: 1024px) {
+   .app-fab--absolute.app-fab--absolute {
+    bottom: 3rem;
+    right: 5rem;
+  }
+}
+
+/*.center {
+	margin-top: 7%;
+	margin-right: 20%;
+	margin-left: 20%;
+}*/
+.hero{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: column nowrap;
+}
+.mdc-card{
+  margin: 5px;
+  width: 75%;
+}
+.img-responsive {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    
+}
+#profile-pic{
+  margin: 0 auto;
+  margin-top:-15%;
+  width:256px;
+  height:256px;
+  border:8px solid; 
+  border-radius: 100%;
+  background: url(2_w_c.jpg);
+  background-size:cover; 
+  background-repeat: no-repeat;
+  border-color:#424242;
+  background-position: center;
+}
+@media screen and (max-width: 600px) {
+#profile-pic{
+  margin-top: -30%;
+}
+
+  }
+
+.mdc-card__title
+{
+  cursor: default;
+}
