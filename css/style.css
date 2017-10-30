@@ -51,9 +51,9 @@ svg .polygon{
 }
 .card-header-slanted-edge{
   position: absolute;
-  bottom: -3px;
+  bottom: -5px;
   z-index: 1;
-  width: 100%;
+  width: 315px;
   right:0;
   left:0;
 }
@@ -76,7 +76,7 @@ svg .polygon{
   font-size: 14px;
   font-weight: 300;
   margin-top: 5px;
-  color: #919191;
+  color: #8C8C8C;
 }
 
 .bio{
