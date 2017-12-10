@@ -1,0 +1,21 @@
+{
+  "name": "Raghava Dhanya",
+  "short_name": "Raghava",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#E9E9E9",
+  "description": "Machine Learning Enthusiast | Developer | Designer",
+  "lang": "en-US",
+  "dir": "ltr",
+  "orientation": "portrait-primary",
+  "theme_color": "#ee534f",
+  "icons": [{
+    "src": "images/icon.png",
+    "sizes": "128x128",
+    "type": "image/png"
+  }, {
+    "src": "images/icon_512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }]
+}

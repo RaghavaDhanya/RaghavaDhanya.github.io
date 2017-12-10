@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Raghava Dhanya</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css" type="text/css">
     <link rel="shortcut icon" href="images/icon.png" type="image/png">
     <link rel="image_src" href="images/icon.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ee534f">
     <!-- start of Open Graph properties-->
     <meta property="og:title" content="Raghava Dhanya" />
@@ -45,27 +46,27 @@
                 A final year Computer Science undergraduate engineering student
                 </div>
                 <div class="social-accounts">
-                    <a target="_blank" rel="noopener" 
+                    <a target="_blank" rel="noopener noreferrer" 
                     href="https://github.com/RaghavaDhanya">
             		<img src="images/git.svg" alt="">
             		<span class="sr-only">Github</span>
             	</a>
-                    <a target="_blank" rel="noopener"
+                    <a target="_blank" rel="noopener noreferrer"
                     href="https://www.twitter.com/RaghavaDhanya">
             		<img src="images/twitter.svg" alt="">
             		<span class="sr-only">Twitter</span>
             	</a>
-                    <a target="_blank" rel="noopener"
+                    <a target="_blank" rel="noopener noreferrer"
                     href="https://www.fb.com/raghavadhanya">
             		<img src="images/fb.svg" alt="">
             		<span class="sr-only">Facebook</span>
             	</a>
-                    <a target="_blank" rel="noopener"
+                    <a target="_blank" rel="noopener noreferrer"
                     href="https://in.linkedin.com/in/raghavadhanya">
             		<img src="images/link.svg" alt="">
             		<span class="sr-only">LinkedIn</span>
             	</a>
-                    <a target="_blank" rel="noopener"
+                    <a target="_blank" rel="noopener noreferrer"
                     href="https://stackoverflow.com/users/4755194/raghava-dhanya">
             		<img src="images/overflow.svg" alt="">
             		<span class="sr-only">StackOverflow</span>
@@ -121,6 +122,13 @@
             "https://stackoverflow.com/users/4755194/raghava-dhanya"
         ]
     }
+    </script>
+    <script type="text/javascript">
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+                 .register('./service-worker.js')
+                 .then(function() { console.log('Service Worker Registered'); });
+      }
     </script>
 </body>
 
