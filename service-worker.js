@@ -2,7 +2,6 @@ var cacheName = 'RaghavaDhanyaCache';
 var filesToCache = [
   '/',
   '/index.html',
-  '/js/zepto.min.js',
   '/js/index.js',
   '/css/style.css',
   '/images/icon.png',
