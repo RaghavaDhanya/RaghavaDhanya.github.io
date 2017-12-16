@@ -1,11 +1,11 @@
-var canvas = $('canvas')[0];
+var canvas = document.getElementsByTagName('canvas')[0];
 var context = canvas.getContext('2d');
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var Dots = [];
-var colors = ['#FF9900', '#424242', '#BCBCBC', '#3299BB'];
+var colors = ['#FF9900', '#424242', '#01579B', '#3299BB','#F44336','#4CAF50','#FF5722','#8BC34A','#009688'];
 var maximum = 70;
 
 function Initialize() {
@@ -28,7 +28,7 @@ function Dot() {
   };
 
   this.alpha = 0.1;
-  this.hex = colors[Math.round(Math.random() * 3)];
+  this.hex = colors[Math.round(Math.random() * (colors.length-1))];
   this.color = HexToRGBA(this.hex, this.alpha);
 }
 
@@ -99,10 +99,10 @@ function TrimHex(hex) {
   return (hex.charAt(0) == "#") ? hex.substring(1, 7) : h;
 }
 
-$(window).resize(function() {
+window.onresize=function() {
   Dots = [];
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-});
+};
 
 Initialize();
