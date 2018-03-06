@@ -9,13 +9,13 @@
  * Base CSS for pdf2htmlEX
  * Copyright 2012,2013 Lu Wang <coolwanglu@gmail.com> 
  * https://github.com/coolwanglu/pdf2htmlEX/blob/master/share/LICENSE
- */#page-container{position:absolute;top:0;left:0;margin:0;padding:0;border:0}@media screen{#page-container{bottom:0;right:0;overflow:auto}@media print{@page{margin:0}html{margin:0}body{margin:0;-webkit-print-color-adjust:exact}#page-container{width:auto;height:auto;overflow:visible;background-color:transparent}.d{display:none}}.pf{position:relative;background-color:white;overflow:hidden;margin:0;border:0}.pc{position:absolute;border:0;padding:0;margin:0;top:0;left:0;width:100%;height:100%;overflow:hidden;display:block;transform-origin:0 0;-ms-transform-origin:0 0;-webkit-transform-origin:0 0}.pc.opened{display:block}.bf{position:absolute;border:0;margin:0;top:0;bottom:0;width:100%;height:100%;-ms-user-select:none;-moz-user-select:none;-webkit-user-select:none;user-select:none}.bi{position:absolute;border:0;margin:0;-ms-user-select:none;-moz-user-select:none;-webkit-user-select:none;user-select:none}@media print{.pf{margin:0;box-shadow:none;page-break-after:always;page-break-inside:avoid}@-moz-document url-prefix(){.pf{overflow:visible;border:1px solid #fff}.pc{overflow:visible}}}.c{position:absolute;border:0;padding:0;margin:0;overflow:hidden;display:block}.t{position:absolute;white-space:pre;font-size:1px;transform-origin:0 100%;-ms-transform-origin:0 100%;-webkit-transform-origin:0 100%;unicode-bidi:bidi-override;-moz-font-feature-settings:"liga" 0}.t:after{content:''}.t:before{content:'';display:inline-block}.t span{position:relative;unicode-bidi:bidi-override}._{display:inline-block;color:transparent;z-index:-1}::selection{background:rgba(127,255,255,0.4)}::-moz-selection{background:rgba(127,255,255,0.4)}.pi{display:none}.d{position:absolute;transform-origin:0 100%;-ms-transform-origin:0 100%;-webkit-transform-origin:0 100%}.it{border:0;background-color:rgba(255,255,255,0.0)}.ir:hover{cursor:pointer}</style>
+ */#page-container{position:absolute;top:0;left:0;margin:0;padding:0;border:0}@media screen{#page-container{bottom:0;right:0;overflow:auto}.pf{position:relative;background-color:white;overflow:hidden;margin:0;border:0}.pc{position:absolute;border:0;padding:0;margin:0;top:0;left:0;width:100%;height:100%;overflow:hidden;display:block;transform-origin:0 0;-ms-transform-origin:0 0;-webkit-transform-origin:0 0}.pc.opened{display:block}.bf{position:absolute;border:0;margin:0;top:0;bottom:0;width:100%;height:100%;-ms-user-select:none;-moz-user-select:none;-webkit-user-select:none;user-select:none}.bi{position:absolute;border:0;margin:0;-ms-user-select:none;-moz-user-select:none;-webkit-user-select:none;user-select:none}.c{position:absolute;border:0;padding:0;margin:0;overflow:hidden;display:block}.t{position:absolute;white-space:pre;font-size:1px;transform-origin:0 100%;-ms-transform-origin:0 100%;-webkit-transform-origin:0 100%;unicode-bidi:bidi-override;-moz-font-feature-settings:"liga" 0}.t:after{content:''}.t:before{content:'';display:inline-block}.t span{position:relative;unicode-bidi:bidi-override}._{display:inline-block;color:transparent;z-index:-1}::selection{background:rgba(127,255,255,0.4)}::-moz-selection{background:rgba(127,255,255,0.4)}.pi{display:none}.d{position:absolute;transform-origin:0 100%;-ms-transform-origin:0 100%;-webkit-transform-origin:0 100%}.it{border:0;background-color:rgba(255,255,255,0.0)}.ir:hover{cursor:pointer}</style>
 <style type="text/css">
 /*! 
  * Fancy styles for pdf2htmlEX
  * Copyright 2012,2013 Lu Wang <coolwanglu@gmail.com> 
  * https://github.com/coolwanglu/pdf2htmlEX/blob/master/share/LICENSE
- */@keyframes fadein{from{opacity:0}to{opacity:1}}@-webkit-keyframes fadein{from{opacity:0}to{opacity:1}}@keyframes swing{0%{transform:rotate(0deg)}10%{transform:rotate(0deg)}90%{transform:rotate(720deg)}100%{transform:rotate(720deg)}}@-webkit-keyframes swing{0%{-webkit-transform:rotate(0deg)}10%{-webkit-transform:rotate(0deg)}90%{-webkit-transform:rotate(720deg)}100%{-webkit-transform:rotate(720deg)}}@media screen{#page-container{background-color:#222222;-webkit-transition:left 500ms;transition:left 500ms}.pf{margin:13px auto;box-shadow:1px 1px 3px 1px #333;border-collapse:separate}.pc.opened{-webkit-animation:fadein 100ms;animation:fadein 100ms}.loading-indicator.active{-webkit-animation:swing 1.5s ease-in-out .01s infinite alternate none;animation:swing 1.5s ease-in-out .01s infinite alternate none}.checked{background:no-repeat url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3goQDSYgDiGofgAAAslJREFUOMvtlM9LFGEYx7/vvOPM6ywuuyPFihWFBUsdNnA6KLIh+QPx4KWExULdHQ/9A9EfUodYmATDYg/iRewQzklFWxcEBcGgEplDkDtI6sw4PzrIbrOuedBb9MALD7zv+3m+z4/3Bf7bZS2bzQIAcrmcMDExcTeXy10DAFVVAQDksgFUVZ1ljD3yfd+0LOuFpmnvVVW9GHhkZAQcxwkNDQ2FSCQyRMgJxnVdy7KstKZpn7nwha6urqqfTqfPBAJAuVymlNLXoigOhfd5nmeiKL5TVTV+lmIKwAOA7u5u6Lped2BsbOwjY6yf4zgQQkAIAcedaPR9H67r3uYBQFEUFItFtLe332lpaVkUBOHK3t5eRtf1DwAwODiIubk5DA8PM8bYW1EU+wEgCIJqsCAIQAiB7/u253k2BQDDMJBKpa4mEon5eDx+UxAESJL0uK2t7XosFlvSdf0QAEmlUnlRFJ9Waho2Qghc1/U9z3uWz+eX+Wr+lL6SZfleEAQIggA8z6OpqSknimIvYyybSCReMsZ6TislhCAIAti2Dc/zejVNWwCAavN8339j27YbTg0AGGM3WltbP4WhlRWq6Q/btrs1TVsYHx+vNgqKoqBUKn2NRqPFxsbGJzzP05puUlpt0ukyOI6z7zjOwNTU1OLo6CgmJyf/gA3DgKIoWF1d/cIY24/FYgOU0pp0z/Ityzo8Pj5OTk9PbwHA+vp6zWghDC+VSiuRSOQgGo32UErJ38CO42wdHR09LBQK3zKZDDY2NupmFmF4R0cHVlZWlmRZ/iVJUn9FeWWcCCE4ODjYtG27Z2Zm5juAOmgdGAB2d3cBADs7O8uSJN2SZfl+WKlpmpumaT6Yn58vn/fs6XmbhmHMNjc3tzDGFI7jYJrm5vb29sDa2trPC/9aiqJUy5pOp4f6+vqeJ5PJBAB0dnZe/t8NBajx/z37Df5OGX8d13xzAAAAAElFTkSuQmCC)}}</style>
+ */@media screen{#page-container{background-color:#222222;-webkit-transition:left 500ms;transition:left 500ms}.pf{margin:13px auto;box-shadow:1px 1px 3px 1px #333;border-collapse:separate}}</style>
 <style type="text/css">
 .ff0{font-family:sans-serif;visibility:hidden;}
 @font-face{font-family:ff1;src:url('data:application/font-woff;base64,d09GRgABAAAAAAh0AA0AAAAADBwAAAADAAAAAAAAAAAAAAAAAAAAAAAAAABGRlRNAAABMAAAABoAAAAcecOKuEdERUYAAAFMAAAAHQAAACAAOQAET1MvMgAAAWwAAAA/AAAAVlXlY0xjbWFwAAABrAAAAHkAAAF6GgoUa2dhc3AAAAIoAAAACAAAAAj//wADZ2x5ZgAAAjAAAAQWAAAFKDNRnA1oZWFkAAAGSAAAADIAAAA2EA94PmhoZWEAAAZ8AAAAHgAAACQF0gNHaG10eAAABpwAAAAsAAAALhWYAP5sb2NhAAAGyAAAABoAAAAaBngFCm1heHAAAAbkAAAAHQAAACAAUABXbmFtZQAABwQAAAFLAAAC+s6ujMJwb3N0AAAIUAAAACQAAAA6AT4BEXicY2BgYGQAgjO2i86D6GuHPn+B0QBatwl6AAB4nGNgZGBg4ANiCQYQYGJgBEJuIGYB8xgABMMAPgAAAHicY2Bkimbaw8DKwMDUBaQZGHogNOMDBkNGJqAoAwczAwwwMiCBgDTXFAYFIKxk2vD/K1DlBgZumBoA37sK4QB4nGNgYGBmgGAZBkYGECgB8hjBfBaGCCAtxCAAFGFiUGBwYQhiSGTIYMhjKGOo/P8fKAcTS4eJ/X/8/8D/zf+X/l/wf/b/Kf8nQc1EA4xsDHAJRiYgwYSuAOIkQoAFhceKKskGJtk5wBQnVJCLgYGbCIPpAADxIxiQAAAAAAAAAf//AAJ4nG2US2zcVBSGfc69vtdjex5+jZvxxPMwmel0kpnE80qTThJEmoBoU0EpAURpJUAhiAU03VAJiRULWPIqBSFVUAlWtBtgUVghsUKRkIAV6oYuUFcsYIHaCccTKrrAtizdey2d7/z/f6yg0lKAcbyquMq0ojiVuN+J/RA9V2YgqvQ6VgT9IXTrtagqmlCVlut34sESDPotiI1ZczJ8/I01q/bVzuitrS18HvpHLxrTxmwa9XNLpflNL4dfADO33310IX5lp4ovjT5IOfe9duwMyDufakymH+w1FLqIY+9PViaOoXL8LkeCIWTeT243VDtxf9BdYp14H67aYgRWa4LV8cagTidOuHpd4vTcvNcCUz+oN06fXb4wUM1TvkBkqpELrEJFBWBCzTExP9Veq/vixMq5rdH3W1s/nmrMHc2Xrj/lAnE79WNzR54RjBdXsg0x4zf8gjlVQJ0LzDCzNuNMNiKv+/D66Kdy0tnP3M9XVt/JogbUT1EB3MA5ZaAsKMogXsKBPUjgQ/Dztp+8qZ+OF/VIzl63BW1ocQLPgvBc2h506sVC2VLVN8soWEpoBuOF51w+oell7oobTo0xASEw5IJ/qck6Hv74o6+fLkrHyMH2Js9KYejm+ujOwFi1HQgCDbmeZhuY4hL1bc7c4Ls/FAWU9t7feBJnlVVFmUpUrfW6/UGSASCjl4FsmARXktq816JjSXh0RuwkfhNqxO9VKRz7H8FueqPx6ieXX5aH27IgkWsVTUipMhUR0N5c7M++EE2c7nS7ruG3/2JZtcLQH5ajz3fOX1bzzGZaqOnvGQDAUcJwtTh/5cUj070jjY009QDZbyUQc0TaPosNZZGSQuVlUr7TuxfHs9x/5Y2pmSFEnrsI+fGadO9ZXYpzFN2qWKp921atyi3ui4M19YD4ny1sBJDb3c0lAPZoLhETrJs3rfEadh1QlHuY6glTCcAiHIKJxlG03Khar2G9VmfEMTa9Z0XR+zkDaouZa+khpLOphRvtMsCyfk1dfQgbaI7Ow5lyEJRYGkdxxnwEGitNNlorBVT3l3FNa+82Pkk1Z8Y6kDlJLTKOnv6ADNqXI4NSMCmqbcA2JHMcWb+mZzDlHHfUotxYN3jn0kSJoha9rfGQaxfu17QkY9S3ZKqN7ett8wHn6jcTHJ0goIBlnxhdsjMZG+KLnpv4oVPvZ4nj5H8cIZQgX4IkRX36XSzDEvb2cWSGZSEDFHTKzF1TxiZ1aXbr3fp4FmQT9N/MOk0shN2gwAwEtWLGZgiCs+aHoZdKCx2LueVckLGEVfm9Qm+AtOqpr6NEwaVmyDBpAVDVcPaxQ4e4rZqxe8KdRU1jdhComFItnJnYmmgeMD4b5ys9lR1mw6zwtKr2A+pMIoPE3n8ATorDnAAAeJxjYGQAAp8zhZc/VsXz23xl4GZ+ARK5dujzFzjN9f8rswLTBgZHBg4GJpAoAOOeEHoAAHicY2BkYGDa8P8rAwOzGwMQMCswMDKgAm4AWVYDIAAAeJxjLGYAA0ZfEMHAwOzGoMeswaDHlMUgw1TPoM/UxqAMxlkMggxcAFxABKkAAAAAAAAAAAAAAEQArAEAAVoBpAHeAiIClAAAeJxjYGRgYOBhCGFgYgABEMnIABJzAPMZAAvfAKgAAAB4nLWRz2rCQBCHf6tRWhB67anMqYeCIUaE1ktBsad6svSekkWEuCtJBJ+hD1D6MH2OQs99kf52XftHD54aSPLtzM7sNwmADl6g4C6FM0jgBiIMAzdxj4/AEXrqOXALHfUeuI2rxg13quiUkQtf5biBEySBm3jFbeAIT+oycAvn6i1wGw/qE2NYLLHCGjU0SlpNGck9G2Bsl6t1rUuZ2lyXDIyYLZjHyBZ83nFpWOreJeYsE6SIKSIcSo60l+92ggk2fo/x2dzXZqysSJmPCmbslXF/8Sfrzhmgiz7vlCf3cE0xa+o7W861pHEiQ9kbRJy+TDa1NrnOZZytKslMLrNlVhTb5VAG3X43TXrs9v9j7H/p44LAoz+/wsL/BOHoMT+CMKHLamGNJHFfDuV/q+/E97V3WlvlH+ED3a2tk925OjeaelHv+QUnZ5NgAHicY2BiwA94gJiRgYmBmUGdwZTBhcGLwZshkCGSIQYAEc8CUA==')format("woff");}.ff1{font-family:ff1;line-height:0.699000;font-style:normal;font-weight:normal;visibility:visible;}
@@ -133,106 +133,7 @@
 .x2{left:128.254000px;}
 .x1{left:191.545000px;}
 .x3{left:258.682000px;}
-@media print{
-.v0{vertical-align:0.000000pt;}
-.ls0{letter-spacing:0.000000pt;}
-.ws0{word-spacing:0.000000pt;}
-._1{margin-left:-15.863744pt;}
-._3{margin-left:-11.897808pt;}
-._8{margin-left:-7.268741pt;}
-._0{margin-left:-3.965936pt;}
-._5{margin-left:-1.487748pt;}
-._11{width:1.487748pt;}
-._d{width:3.787199pt;}
-._b{width:6.293715pt;}
-._15{width:8.496688pt;}
-._18{width:16.312097pt;}
-._4{width:17.703467pt;}
-._9{width:20.137735pt;}
-._10{width:21.481008pt;}
-._c{width:23.608715pt;}
-._1c{width:26.563733pt;}
-._1b{width:29.568044pt;}
-._6{width:34.996114pt;}
-._2{width:49.045409pt;}
-._7{width:53.931923pt;}
-._f{width:186.466566pt;}
-._13{width:603.127027pt;}
-._e{width:703.734475pt;}
-._a{width:854.692005pt;}
-._12{width:871.287950pt;}
-._17{width:2009.417406pt;}
-._1a{width:2069.284329pt;}
-._16{width:2073.583000pt;}
-._19{width:2106.119632pt;}
-._14{width:2155.146136pt;}
-.fs1{font-size:53.133867pt;}
-.fs3{font-size:63.761067pt;}
-.fs2{font-size:76.513067pt;}
-.fs0{font-size:132.197867pt;}
-.y2f{bottom:63.109333pt;}
-.y2e{bottom:84.362667pt;}
-.y2d{bottom:105.617333pt;}
-.y2c{bottom:126.870667pt;}
-.y2b{bottom:148.124000pt;}
-.y2a{bottom:169.377333pt;}
-.y29{bottom:192.745333pt;}
-.y28{bottom:222.373333pt;}
-.y27{bottom:238.314667pt;}
-.y0{bottom:252.000000pt;}
-.y26{bottom:254.254667pt;}
-.y25{bottom:274.180000pt;}
-.y24{bottom:290.120000pt;}
-.y23{bottom:306.060000pt;}
-.y22{bottom:322.000000pt;}
-.y21{bottom:341.925333pt;}
-.y20{bottom:357.865333pt;}
-.y1f{bottom:373.806667pt;}
-.y1e{bottom:389.746667pt;}
-.y1d{bottom:409.672000pt;}
-.y1c{bottom:425.612000pt;}
-.y1b{bottom:441.552000pt;}
-.y1a{bottom:461.477333pt;}
-.y19{bottom:477.417333pt;}
-.y18{bottom:493.357333pt;}
-.y17{bottom:509.297333pt;}
-.y16{bottom:534.517333pt;}
-.y15{bottom:564.145333pt;}
-.y14{bottom:580.086667pt;}
-.y13{bottom:603.996000pt;}
-.y12{bottom:619.937333pt;}
-.y11{bottom:644.116000pt;}
-.y10{bottom:673.744000pt;}
-.yf{bottom:689.685333pt;}
-.ye{bottom:705.625333pt;}
-.yd{bottom:728.993333pt;}
-.yc{bottom:758.621333pt;}
-.yb{bottom:774.561333pt;}
-.ya{bottom:798.472000pt;}
-.y9{bottom:814.412000pt;}
-.y8{bottom:838.322667pt;}
-.y7{bottom:854.262667pt;}
-.y6{bottom:870.202667pt;}
-.y5{bottom:886.142667pt;}
-.y4{bottom:910.322667pt;}
-.y3{bottom:939.950667pt;}
-.y2{bottom:955.892000pt;}
-.y1{bottom:987.772000pt;}
-.h4{height:39.903534pt;}
-.h6{height:44.632747pt;}
-.h3{height:45.535724pt;}
-.h5{height:53.712173pt;}
-.h2{height:90.952132pt;}
-.h1{height:720.666667pt;}
-.h0{height:1122.520000pt;}
-.w1{width:660.000000pt;}
-.w0{width:793.701333pt;}
-.x0{left:66.666667pt;}
-.x4{left:87.125333pt;}
-.x2{left:171.005333pt;}
-.x1{left:255.393333pt;}
-.x3{left:344.909333pt;}
-}
+
 </style>
 <title></title>
 </head>
