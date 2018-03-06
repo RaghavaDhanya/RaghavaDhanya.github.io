@@ -2,6 +2,7 @@ var cacheName = 'RaghavaDhanyaCache';
 var filesToCache = [
   '/',
   '/index.html',
+  '/resume.html',
   '/js/index.js',
   '/css/style.css',
   '/images/icon.png',
