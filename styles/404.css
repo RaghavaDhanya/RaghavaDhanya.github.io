@@ -1,0 +1,19 @@
+.center{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.column{
+    flex-direction: column;
+}
+.row{
+    flex-direction: row;
+}
+.error-code{
+    font-size: 25vw;
+    font-family: sans-serif;
+    display: block;
+}
+.error-message{
+    font-family: sans-serif;
+}

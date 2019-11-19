@@ -2,9 +2,7 @@ var cacheName = 'RaghavaDhanyaCache';
 var filesToCache = [
   '/',
   '/index.html',
-  '/resume.html',
-  '/js/index.js',
-  '/css/style.css',
+  '/styles/main_dark.css',
   '/images/icon.png',
   '/images/icon_512.png',
   '/images/2_w_c.jpg',
@@ -12,7 +10,8 @@ var filesToCache = [
   '/images/git.svg',
   '/images/link.svg',
   '/images/twitter.svg',
-  '/images/overflow.svg'
+  '/images/overflow.svg',
+  '/images/profile.jpg'
 ];
 self.addEventListener('install', function(e) {
   console.log('[ServiceWorker] Install');
