@@ -11,7 +11,8 @@ var filesToCache = [
   '/images/link.svg',
   '/images/twitter.svg',
   '/images/overflow.svg',
-  '/images/profile.jpg'
+  '/images/profile.jpg',
+  '/favicon.ico'
 ];
 self.addEventListener('install', function(e) {
   console.log('[ServiceWorker] Install');
