@@ -1,0 +1,41 @@
+baseURL: "https://ai.ragv.in"
+languageCode: "en-us"
+title: "AI Logs"
+theme: "PaperMod"
+
+params:
+  author: "Raghava Dhanya"
+  homeInfoParams:
+    Title: "AI Logs"
+    Content: Logs on all things Machine Learning, Artificial intellgence and MLOps
+  socialIcons:
+    - name: other
+      url: "https://ragv.in"
+    - name: twitter
+      url: "https://twitter.com/RaghavaDhanya"
+    - name: stackoverflow
+      url: "https://stackoverflow.com/users/4755194/raghavadhanya"
+    - name: github
+      url: "https://github.com/RaghavaDhanya"
+    - name: linkedin
+      url: "https://www.linkedin.com/in/raghavadhanya/"
+    - name: cv
+      url: "https://ragv.in/s/resume"
+menu:
+  main:
+    - identifier: project
+      name: projects
+      url: /categories/projects/
+      weight: 10
+    - identifier: categories
+      name: categories
+      url: /categories/
+      weight: 10
+    - identifier: tags
+      name: tags
+      url: /tags/
+      weight: 10
+    - identifier: ragv.in
+      name: ragv.in
+      url: https://ragv.in
+      weight: 20
