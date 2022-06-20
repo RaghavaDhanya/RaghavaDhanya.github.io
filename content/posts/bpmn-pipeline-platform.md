@@ -1,7 +1,6 @@
 ---
 title: "BPMN Pipeline Platform"
 date: 2022-06-20T20:54:07+05:30
-draft: true
 tags: ["mlops", "pipeline", "bpmn", "python", "r", "java"]
 categories:
     - projects
