@@ -2,12 +2,21 @@ baseURL: "https://ai.ragv.in"
 languageCode: "en-us"
 title: "AI Logs"
 theme: "PaperMod"
-
+googleAnalytics: G-RGHWYFE1WN
+enableEmoji: true
 params:
+  env: production
   author: "Raghava Dhanya"
+  ShowReadingTime: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
   homeInfoParams:
     Title: "AI Logs"
-    Content: Logs on all things Machine Learning, Artificial intellgence and MLOps
+    Content: >
+      - Logs on all things Machine Learning, Artificial intellgence and MLOps
+
+      - By [Raghava Dhanya](https://ragv.in)
+
   socialIcons:
     - name: other
       url: "https://ragv.in"
