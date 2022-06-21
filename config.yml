@@ -5,6 +5,8 @@ theme: "PaperMod"
 googleAnalytics: G-RGHWYFE1WN
 enableEmoji: true
 params:
+  cover:
+    hidden: false
   env: production
   author: "Raghava Dhanya"
   ShowReadingTime: true

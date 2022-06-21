@@ -5,16 +5,20 @@ tags: ["golang", "cgo", "mlops", "multi-armed-bandit", "python", "ml", "ai"]
 categories:
     - projects
     - glance-inmobi
+cover:
+    image: /images/golang-for-machine-learning-serving/go_mab_wide.png
+    caption: "Multi Armed Bandit in Golang"
+    alt: Golang's Gopher with tentacles
 ---
 So the ask is to do **3 Million Predictions per second** with as little resources as possible. Thankfully its one of the simpler model of Recommendation systems, Multi Armed Bandit(MAB).
 Multi Armed bandit usually involves sampling from distribution like [Beta Distribution](https://en.wikipedia.org/wiki/Beta_distribution). That's where the most time is spent. If we can concurrently do as many sampling as we can, we'll use the resources well. Maximizing Resource utilization is the key to reducing overall resources needed for the model. 
 
-Our current prediction services are Micro-services written in python, And they follow the general structure of 
+Our current prediction services are micro-services written in Python, and they follow the general structure of 
 > Request -> Features Fetch -> Predict -> Post process -> Return
 
 A single request can require us to score thousands of user, content pairs. Python with GIL and multiprocessing can only get you so far, We have implemented batch sampling methods based on `cython` and `C++` that get around the GIL and we use many workers based on number of cores to handle requests concurrently.
 
-The current python service with single node can do 192 RPS, about 400 pairs each. Only about 20% average CPU utilization. The limiting factor now was the language, the serving framework and the network call to feature store.
+The current Python service with single node can do 192 RPS, about 400 pairs each. Only about 20% average CPU utilization. The limiting factor now was the language, the serving framework and the network call to feature store.
 <!-- When switching between sync and async code in python caused lots of latencies due to pickling that's required if you want truly concurrent code. Given that our limit was 200ms latency, we couldn't afford switching, so all of sync code ended up in an async function and that's bad for many reasons -->
 
 ## Why Golang?
@@ -68,9 +72,9 @@ func main() {
 
 That's it, Task #1 done. Took less than an hour.
 
-On #2, it required slightly more learning on how to make [structs with methods](https://gobyexample.com/methods) and [goroutines](https://gobyexample.com/channels). One of the major differentiator from C++, Python is that Golang doesn't support full object oriented programming, mainly it doesn't support inheritance. Its also completely different in how the methods on structs are defined from other languages I've encountered.
+On #2, it required slightly more learning on how to make [structs with methods](https://gobyexample.com/methods) and [goroutines](https://gobyexample.com/channels). One of the major differentiator from C++, Python is that Golang doesn't support full object oriented programming, mainly it doesn't support inheritance. It's also completely different in how the methods on structs are defined from other languages I've encountered.
 
-The Featurestore we were using had the [golang client](https://cloud.google.com/go/docs/reference/cloud.google.com/go/aiplatform/latest/apiv1#cloud_google_com_go_aiplatform_apiv1_FeaturestoreOnlineServingClient), All I had to do was write a wrapper around it to read concurrently large number of entities.
+The Featurestore we were using had the [Golang client](https://cloud.google.com/go/docs/reference/cloud.google.com/go/aiplatform/latest/apiv1#cloud_google_com_go_aiplatform_apiv1_FeaturestoreOnlineServingClient), all I had to do was write a wrapper around it to read concurrently large number of entities.
 
 The basic structure I was going for was 
 ```go
@@ -134,9 +138,9 @@ func (vfs *VertexFeatureStoreClient) Close() error {
 #### Tips on Goroutine
 Always try to use channels, there are many tutorials using sync workgroups for Goroutine. Those are lower level APIs you won't need for most cases. Channels are elegant way to run goroutines even if you don't need to pass data, you can send flags in channel to collect. Goroutines are cheap virtual threads, you don't have to worry about making too many of them and running on multiple cores. The latest golang can run that across cores for you.
 
-On #3, It was the hardest part. Spent about a day of debugging to get it working. So if your use-case doesn't need complex sampling and `C++` I would suggest just going with [Gonum](https://www.gonum.org/) you would save yourself lot of time.
+On #3, it was the hardest part. Spent about a day of debugging to get it working. So if your use-case doesn't need complex sampling and `C++` I would suggest just going with [Gonum](https://www.gonum.org/) you would save yourself lot of time.
 
-One of the things I didn't realize coming from cython was that I had to compile c++ files manually and load that in cgo include flags. 
+One of the things I didn't realize coming from `cython` was that I had to compile `C++` files manually and load that in cgo include flags. 
 
 header file
 ```c++
@@ -155,7 +159,7 @@ extern "C"
 
 #endif
 ```
-Notice `extern C`, Its needed for `C++` code to be usable in go, not needed for `C` due to [mangling](https://en.wikipedia.org/wiki/Name_mangling). Another gotcha was that I couldn't do any `#include` statements in header file, cgo linking fails in that case(for unknown reason). So I moved those to `.cpp` file.
+Notice `extern C`, it's needed for `C++` code to be usable in go, not needed for `C` due to [mangling](https://en.wikipedia.org/wiki/Name_mangling). Another gotcha was that I couldn't do any `#include` statements in header file, cgo linking fails in that case(for unknown reason). So I moved those to `.cpp` file.
 
 
 To compile it 
@@ -195,15 +199,15 @@ Integrating them all together with simple model struct with predict method is si
 |Max latency  |   78ms |   110ms|
 |Max CPU util.|  ~20%  |  ~55%  |
 
-That's 4.3x improvement on RPS, That reduces our number of minimum node to 19 from 80, That's a **HUGE** cost advantage. Max latency was slightly higher but that acceptable given python service saturates at 192 and degrades significantly if traffic raises beyond that.
+That's **4.3x** improvement on RPS, that reduces our number of minimum node to 19 from 80, that's a **HUGE** cost advantage. Max latency was slightly higher but that acceptable given python service saturates at 192 and degrades significantly if traffic raises beyond that.
 
 ### Should I convert all my models to Golang?
 Short answer: No.
 
-Long answer: Go has great advantage in serving, But Python is still king for experimentation. I would only suggest go if the model is simple and its a long running base model not experiment. Go is not mature for complex ML use-cases yet. 
+Long answer: Go has great advantage in serving, but Python is still king for experimentation. I would only suggest go if the model is simple and its a long running base model not experiment. Go is not mature for complex ML use-cases yet. 
 
 ### So the elephant in the room, Why not Rust?
-Well, [Shiv did](http://shvbsle.in/serving-ml-at-the-speed-of-rust/). Take a look. Its even faster than Go.
+Well, [Shiv did](http://shvbsle.in/serving-ml-at-the-speed-of-rust/). Take a look. It is even faster than Go.
 
 
 
