@@ -1,9 +1,10 @@
 ---
 title: "BPMN Pipeline Platform"
 date: 2022-06-20T20:54:07+05:30
-tags: ["mlops", "pipeline", "bpmn", "python", "r", "java"]
+tags: ["mlops", "pipeline", "bpmn", "python", "r", "java", "ml", "ai"]
 categories:
     - projects
+    - musigma-labs
 ---
 One of my major work at [Mu Sigma Labs](https://www.mu-sigma.com/our-platform/business-intelligence-services-innovation-lab) was with BPMN based analytics automation/ pipeline platform. Based on an open source platform [Activiti](https://www.activiti.org/). I was the owner and developed, tested, maintained the platform. 
 It served about **3k** internal users and ran several **critical** reporting and data pipelines.
@@ -52,7 +53,8 @@ My major work was in
 - Small UI fixes
 
 ## Award ⭐️
-I was awarded a [spot award](/images/bpmn-pipeline-platform/spot_award_2.jpg) for my work on this
+I was awarded a spot award for my work on this
+![spot award](/images/bpmn-pipeline-platform/spot_award_2.jpg) 
 
 
 
