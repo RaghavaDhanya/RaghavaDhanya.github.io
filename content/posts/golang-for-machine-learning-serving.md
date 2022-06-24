@@ -204,7 +204,7 @@ That's **4.3x** improvement on RPS, that reduces our number of minimum node to 1
 ### Should I convert all my models to Golang?
 Short answer: No.
 
-Long answer: Go has great advantage in serving, but Python is still king for experimentation. I would only suggest go if the model is simple and its a long running base model not experiment. Go is not mature for complex ML use-cases yet. 
+Long answer: Go has great advantage in serving, but Python is still king for experimentation. I would only suggest go if the model is simple and its a long running base model not experiment. Go is not mature for complex ML use-cases [yet](https://github.com/josephmisiti/awesome-machine-learning#go). 
 
 ### So the elephant in the room, Why not Rust?
 Well, [Shiv did](http://shvbsle.in/serving-ml-at-the-speed-of-rust/). Take a look. It is even faster than Go.
