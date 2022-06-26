@@ -59,7 +59,7 @@ My major work was in
 
 ## Award ⭐️
 I was awarded a spot award for my work on this
-![spot award](/images/bpmn-pipeline-platform/spot_award_2.jpg) 
+![spot award](/images/bpmn-pipeline-platform/spot_award_2.png) 
 
 
 
