@@ -4,9 +4,15 @@ title: "AI Logs"
 theme: "PaperMod"
 googleAnalytics: G-RGHWYFE1WN
 enableEmoji: true
+privacy:
+  googleAnalytics:
+    anonymizeIP: true
+    disable: false
+    respectDoNotTrack: true
+    useSessionStorage: false
 params:
-  cover:
-    hidden: false
+  # cover:
+  #   hidden: false
   env: production
   author: "Raghava Dhanya"
   ShowReadingTime: true
@@ -32,6 +38,8 @@ params:
       url: "https://www.linkedin.com/in/raghavadhanya/"
     - name: cv
       url: "https://ragv.in/s/resume"
+    - name: email
+      url: "mailto:public@ragv.in"
 menu:
   main:
     - identifier: project
