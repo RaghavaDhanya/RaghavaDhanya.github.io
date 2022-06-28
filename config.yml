@@ -40,6 +40,8 @@ params:
       url: "https://ragv.in/s/resume"
     - name: email
       url: "mailto:public@ragv.in"
+    - name: rss
+      url: /index.xml
 menu:
   main:
     - identifier: project
