@@ -10,6 +10,7 @@ privacy:
     disable: false
     respectDoNotTrack: true
     useSessionStorage: false
+copyright: © 2022 [Raghava Dhanya](https://ragv.in) | [License](/license) |
 params:
   # cover:
   #   hidden: false
