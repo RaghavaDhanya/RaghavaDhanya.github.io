@@ -19,6 +19,7 @@ params:
   ShowReadingTime: true
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
+  ShowRssButtonInSectionTermList: true
   homeInfoParams:
     Title: "AI Logs"
     Content: >
