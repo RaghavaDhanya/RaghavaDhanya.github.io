@@ -12,7 +12,7 @@ cover:
     alt: "A BPMN pipeline containing tasks 'fetch data', 'load data & train model', 'approval from owner', 'deploy model' and 'email on failure to fetch data'. All script tasks are python"
 ---
 One of my major work at [Mu Sigma Labs](https://www.mu-sigma.com/our-platform/business-intelligence-services-innovation-lab) was with BPMN based analytics automation/ pipeline platform. Based on an open source platform [Activiti](https://www.activiti.org/). I was the owner and developed, tested, maintained the platform. 
-It served about **3k** internal users and ran several **critical** reporting and data pipelines.
+It served approximately **3k** internal users and ran several **critical** reporting and data pipelines.
  
 ### Technologies Used
 `Java`, `Spring Boot` as Backend. The platform itself supported scripting in `Python`, `R` for automation. `Angular` for Frontend.
