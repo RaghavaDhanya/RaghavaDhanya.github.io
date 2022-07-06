@@ -16,7 +16,7 @@ Multi Armed bandit usually involves sampling from distribution like [Beta Distri
 Our current prediction services are micro-services written in Python, and they follow the general structure of 
 > Request -> Features Fetch -> Predict -> Post process -> Return
 
-A single request can require us to score thousands of user, content pairs. Python with GIL and multiprocessing can only get you so far, We have implemented batch sampling methods based on `cython` and `C++` that get around the GIL and we use many workers based on number of cores to handle requests concurrently.
+A single request can require us to score thousands of user, content pairs. Python with GIL and multiprocessing can only get you so far, We have implemented [batch sampling](/posts/python-with-a-dash-of-cpp-optimizing/) methods based on `cython` and `C++` that get around the GIL and we use many workers based on number of cores to handle requests concurrently.
 
 The current Python service with single node can do 192 RPS, about 400 pairs each. Only about 20% average CPU utilization. The limiting factor now was the language, the serving framework and the network call to feature store.
 <!-- When switching between sync and async code in python caused lots of latencies due to pickling that's required if you want truly concurrent code. Given that our limit was 200ms latency, we couldn't afford switching, so all of sync code ended up in an async function and that's bad for many reasons -->
