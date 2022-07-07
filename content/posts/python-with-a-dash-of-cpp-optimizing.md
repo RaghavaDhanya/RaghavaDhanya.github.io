@@ -32,7 +32,7 @@ samples = [ np.random.beta(a, b) for a,b in ab_vals.values ]
 ```
 ![screenshot of numpy time-it with 290 ms ± 1.28 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)](/images/python-with-a-dash-of-cpp-optimizing/timeit-numpy.png)
 
-That's **10x** faster!. But I had an issue, there was a need to do [Percent Point Function(PPF)](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.ppf.html) calculation down the line. Numpy doesn't support it, so I ended up looking for a better solution. And all these executions are running serially, even though Numpy is built in C and is well optimized we are coming back to Python after each sample. If we could somehow do the sampling in a batch using multiple cores, we can achieve better results.
+That's **100x** faster!. But I had an issue, there was a need to do [Percent Point Function(PPF)](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.ppf.html) calculation down the line. Numpy doesn't support it, so I ended up looking for a better solution. And all these executions are running serially, even though Numpy is built in C and is well optimized we are coming back to Python after each sample. If we could somehow do the sampling in a batch using multiple cores, we can achieve better results.
 
 ## Cython and C++
 Cython can help you get away from GIL limitation and run functions in batch, but these functions can only be a pure Cython function or a C/C++ function. I don't think I am big brain enough to build my own Beta sample and random number generator in Cython. So I went with writing these in C++ with the existing [boost](https://www.boost.org/) library.
