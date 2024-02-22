@@ -9,7 +9,7 @@ categories:
 ---
 One fine day, I sat down to optimize the size of a Docker image. Like many times before, I opted for [distroless](https://github.com/GoogleContainerTools/distroless) images as my base, a choice I had made countless times before without a hitch.
 
-Distroless images, for the uninitiated, are peak minimalism, containing only the essential libraries and binaries required to run the application. Not only do they trim the fat off the image size, but they also mitigate the risk of [CVEs](https://www.cve.org/About/Overview) lurking within
+Distroless images, for the uninitiated, are peak minimalism, containing only the essential libraries and binaries required to run the application. Not only do they trim the fat off the image size, but they also mitigate the risk of [CVEs](https://www.cve.org/About/Overview) lurking within.
 
 Little did I know, what appeared to be a simple task soon spiraled into hours of troubleshooting and head-scratching.
 
