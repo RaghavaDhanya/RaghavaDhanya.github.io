@@ -74,8 +74,8 @@ RUN chmod +x /tini
 
 FROM gcr.io/distroless/base
 COPY --from=build /app /
-ENTRYPOINT ["/tini"]
+ENTRYPOINT ["/tini", "--"]
 CMD ["/app"]
 ```
-This is essentially the same as `ENTRYPOINT ["/tini", "/app"]`.
+This is essentially the same as `ENTRYPOINT ["/tini", "--". "/app"]`.
 
