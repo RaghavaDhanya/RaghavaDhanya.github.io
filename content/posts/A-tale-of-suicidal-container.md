@@ -59,7 +59,7 @@ The culprit? The line `ENTRYPOINT ["/app"]` in the Dockerfile. Docker assigns PI
 
 There's a significant distinction between `ENTRYPOINT ./app` and `ENTRYPOINT ["/app"]` in Docker. The former treats `./app` as a string executed by the shell, making the app a child of the shell. The latter, however, directly executes `["/app"]`, leading the app to assume PID 1.
 
-Switching back to `ENTRYPOINT ./app` wasn't an option due to distroless' lack of a shell. Enter [`tini`](https://github.com/krallin/tini), a lightweight init system designed to solve precisely this problem.  While I've encountered `tini` in [Dockerfiles](https://github.com/argoproj/argo-cd/blob/17ef8b957907c9a1fa4644187330969c0612e8d4/Dockerfile#L146) before, I never truly grasped its necessity until now. It serves as dummy processes to avoid the PID 1 problem.
+Switching back to `ENTRYPOINT ./app` wasn't an option due to distroless' lack of a shell. Enter [`tini`](https://github.com/krallin/tini), a lightweight init system designed to solve precisely this problem.  While I've encountered `tini` in [Dockerfiles](https://github.com/argoproj/argo-cd/blob/17ef8b957907c9a1fa4644187330969c0612e8d4/Dockerfile#L146) before, I never truly grasped its necessity until now. It serves as dummy process to avoid the PID 1 problem.
 
 Another aspect I previously overlooked was the distinction between `CMD` and `ENTRYPOINT`. `CMD` executes the command within `ENTRYPOINT`.
 ```dockerfile
