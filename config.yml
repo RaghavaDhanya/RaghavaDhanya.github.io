@@ -14,7 +14,7 @@ copyright: © 2023 [Raghava Dhanya](https://ragv.in) | [License](/license) |
 params:
   # cover:
   #   hidden: false
-  # env: production
+  env: production
   label:
     icon: Logo_2_0.svg
   author: "Raghava Dhanya"
@@ -49,15 +49,15 @@ params:
 menu:
   main:
     - identifier: project
-      name: projects
+      name: Projects
       url: /categories/projects/
       weight: 10
     - identifier: categories
-      name: categories
+      name: Categories
       url: /categories/
       weight: 10
     - identifier: tags
-      name: tags
+      name: Tags
       url: /tags/
       weight: 10
     - identifier: ragv.in
