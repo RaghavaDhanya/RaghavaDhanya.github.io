@@ -4,7 +4,6 @@ date: 2024-02-21T12:25:03+05:30
 # draft: true
 tags: ["kubernetes", "mlops", "golang", "docker", "containers"]
 categories:
-    - projects
     - glance-inmobi
 ---
 One fine day, I sat down to optimize the size of a Docker image. Like many times before, I opted for [distroless](https://github.com/GoogleContainerTools/distroless) images as my base, a choice I had made countless times before without a hitch.
