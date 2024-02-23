@@ -28,7 +28,8 @@ params:
       - Logs on all things Machine Learning, Artificial intellgence and MLOps
 
       - By [Raghava Dhanya](https://ragv.in)
-
+  schema:
+    publisherType: "Person"
   socialIcons:
     - name: other
       url: "https://ragv.in"

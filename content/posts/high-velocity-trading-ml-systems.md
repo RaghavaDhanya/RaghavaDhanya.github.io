@@ -8,7 +8,7 @@ categories:
     - musigma-labs
 ---
 
-As one of my works at [Mu Sigma Labs](https://www.mu-sigma.com/our-platform/business-intelligence-services-innovation-lab), I was part of a research project on the High Velocity Time Series on early 2019. One of the goals was to create a high velocity trading app using Pair Trading.
+As one of my works at [Mu Sigma Labs](https://www.mu-sigma.com/labs), I was part of a research project on the High Velocity Time Series on early 2019. One of the goals was to create a high velocity trading app using Pair Trading.
 
 ## The Requisite terms
 ### Long and Short trades
