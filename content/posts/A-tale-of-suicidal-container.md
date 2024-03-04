@@ -2,7 +2,7 @@
 title: "A Tale of a Suicidal Container"
 date: 2024-02-21T12:25:03+05:30
 # draft: true
-tags: ["kubernetes", "mlops", "golang", "docker", "containers"]
+tags: ["kubernetes", "mlops", "golang", "docker", "containers", "linux", "tini"]
 categories:
     - glance-inmobi
 ---
