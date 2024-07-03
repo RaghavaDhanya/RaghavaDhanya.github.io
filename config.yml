@@ -65,3 +65,6 @@ menu:
       name: ragv.in
       url: https://ragv.in
       weight: 20
+    - name: Archives
+      url: archives
+      weight: 30
