@@ -14,7 +14,7 @@ copyright: © 2023 [Raghava Dhanya](https://ragv.in) | [License](/license) |
 params:
   # cover:
   #   hidden: false
-  env: production
+  # env: production
   label:
     icon: Logo_2_0.svg
   author: "Raghava Dhanya"
@@ -44,7 +44,7 @@ params:
     - name: cv
       url: "https://ragv.in/s/resume"
     - name: email
-      url: "mailto:public@ragv.in"
+      url: "mailto:dm@ragv.in"
     - name: rss
       url: /index.xml
 menu:
