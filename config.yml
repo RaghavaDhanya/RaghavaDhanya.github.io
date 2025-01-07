@@ -10,7 +10,7 @@ privacy:
     disable: false
     respectDoNotTrack: true
     useSessionStorage: false
-copyright: © 2023 [Raghava Dhanya](https://ragv.in) | [License](/license) |
+copyright: © 2025 [Raghava Dhanya](https://ragv.in) · [License](/license)
 params:
   # cover:
   #   hidden: false
@@ -18,7 +18,7 @@ params:
   social: false
   label:
     icon: Logo_2_0.svg
-  author: "Raghava Dhanya"
+  author: "[Raghava Dhanya](https://ragv.in)"
   ShowReadingTime: true
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
