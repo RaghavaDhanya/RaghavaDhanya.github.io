@@ -20,7 +20,7 @@ Let's take a toy example of two stocks `A` and `B`
 ![Example of two stocks which are mostly same but for small amount of time they diverge](/images/high-velocity-trading-ml-systems/pair-example.png)
 
 Once you have a good pair security and detect a divergence then the simple strategy is to short the security that is up, long the one that is down. 
-#### How does it work?
+### How does it work?
 Let's say securities `A` and `B` diverge like this
 ![A graph of showing A going up and B going down](/images/high-velocity-trading-ml-systems/pair-diverge.png)
 So you short `A` and long `B`.
