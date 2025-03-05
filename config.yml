@@ -42,6 +42,8 @@ params:
       url: "https://github.com/RaghavaDhanya"
     - name: linkedin
       url: "https://www.linkedin.com/in/raghavadhanya/"
+    - name: dribbble
+      url: "https://dribbble.com/raghavadhanya"
     - name: cv
       url: "https://ragv.in/s/resume"
     - name: email
