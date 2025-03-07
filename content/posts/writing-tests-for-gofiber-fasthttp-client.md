@@ -4,47 +4,10 @@ date: 2025-01-23T10:20:44+05:30
 draft: true
 ---
 
-Gofiber is lightweight and fast web framework for Go. It is built on top of Fasthttp, which is a high-performance HTTP library. Fasthttp is known for its speed and low memory footprint. Gofiber provides APIs that are similar to Express.js, which makes it easy to use.
+API clients or SDKs are common for providing your users with a way to interact with your service. In Go, we can use Fasthttp client to make requests to a server. Fasthttp client is a high-performance HTTP client that is used by Gofiber. Writing tests for these clients is important to ensure that the client is working as expected.
 
-Let's look at a simple application that we can use as an example for writing tests for Gofiber Fasthttp client. Let's say this server provides two routes: ping and fetch data and a error handler for 5xx errors.
-
-```go
-package main
-
-import (
-    "fmt"
-    "github.com/gofiber/fiber/v2"
-)
-
-func main() {
-    app := fiber.New()
-
-    app.Use(func(c *fiber.Ctx) error {
-        if err := c.Next(); err != nil {
-            c.Status(fiber.StatusInternalServerError).SendString("Internal Server Error")
-            return err
-        }
-        return nil
-    })
-
-    app.Get("/ping", func(c *fiber.Ctx) error {
-        return c.SendString("pong")
-    })
-
-    app.Get("/fetch-data", func(c *fiber.Ctx) error {
-        if c.Query("id") == "" {
-            return c.Status(fiber.StatusBadRequest).SendString("id is required")
-        }
-        return c.JSON(fiber.Map{
-            "data": "some data",
-        })
-    })
-
-    app.Listen(":3000")
-}
-```
-
-Now let's try to run this server and test it using curl.
+Let's look at a simple application that we can use as an example for writing tests for Gofiber Fasthttp client. Let's say this server provides two routes: ping and fetch data and it returns error 401 if the id is not provided.
+you can test it using curl.
 
 ```sh
 go run main.go
@@ -90,6 +53,10 @@ func (c *Client) Ping() (string, error) {
         return "", err
     }
 
+    if resp.StatusCode() != fasthttp.StatusOK {
+        return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+    }
+
     return string(resp.Body()), nil
 }
 
@@ -104,6 +71,10 @@ func (c *Client) FetchData(id string) (string, error) {
 
     if err := fasthttp.Do(req, resp); err != nil {
         return "", err
+    }
+
+    if resp.StatusCode() != fasthttp.StatusOK {
+        return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode())
     }
 
     return string(resp.Body()), nil
@@ -145,6 +116,34 @@ func TestClient_Ping(t *testing.T) {
     if resp != "pong" {
         t.Fatalf("expected pong, got %s", resp)
     }
+
+}
+
+func TestClient_PingError(t *testing.T) {
+    ln := fasthttputil.NewInmemoryListener()
+    defer ln.Close()
+
+    go func() {
+        if err := fasthttp.Serve(ln, func(ctx *fasthttp.RequestCtx) {
+            ctx.SetStatusCode(fasthttp.StatusBadRequest)
+            ctx.SetBodyString("bad request")
+        }); err != nil {
+            t.Fatal(err)
+        }
+    }()
+
+    client := NewClient("http://localhost")
+    client.url = "http://" + ln.Addr().String()
+
+    _, err := client.Ping()
+    if err == nil {
+        t.Fatal("expected error, got nil")
+    }
+
+    if err.Error() != "unexpected status code: 400" {
+        t.Fatalf("expected unexpected status code: 400, got %s", err.Error())
+    }
+
 }
 
 func TestClient_FetchData(t *testing.T) {
