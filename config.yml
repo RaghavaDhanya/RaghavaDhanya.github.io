@@ -25,10 +25,9 @@ params:
   ShowRssButtonInSectionTermList: true
   homeInfoParams:
     Title: "AI Logs"
-    Content: >
-      - Logs on all things Machine Learning, Artificial intellgence and MLOps
-
-      - By [Raghava Dhanya](https://ragv.in)
+    Content: |
+      Logs on all things Machine Learning, Artificial intellgence and MLOps\
+      By [Raghava Dhanya](https://ragv.in)
   schema:
     publisherType: "Person"
   socialIcons:
