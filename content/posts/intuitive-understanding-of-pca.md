@@ -6,6 +6,10 @@ math: true
 tags: ["pca", "linear-algebra", "ml", "ai", "dimensionality-reduction"]
 categories:
     - general
+cover:
+    image: /images/intuitive-understanding-of-pca/cover.png
+    caption: "Principal directions of a tilted Gaussian"
+    alt: "Scatter cloud in a tilted Gaussian shape, with two arrows through the centroid: a longer sage-green arrow along the principal direction and a shorter amber arrow perpendicular to it"
 ---
 Principal Component Analysis (PCA) is an algorithm that I first learnt in a pattern recognition class in college. I understood the motivation and how to use it, but never really understood why we do what we do in PCA. 
 
