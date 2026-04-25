@@ -1,0 +1,13 @@
+{{- /* MathJax — loaded only on pages with `math: true` in frontmatter. */ -}}
+{{- if .Param "math" }}
+<script>
+  window.MathJax = {
+    tex: {
+      displayMath: [['\\[', '\\]'], ['$$', '$$']],
+      inlineMath:  [['\\(', '\\)'], ['$', '$']]
+    },
+    loader: { load: ['ui/safe'] }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+{{- end }}

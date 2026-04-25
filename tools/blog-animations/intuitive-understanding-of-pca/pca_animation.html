@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PCA — height vs weight</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+    --accent: #1e1e1e;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .stage {
+    width: 720px;
+    height: 540px;
+    position: relative;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .axis-line {
+    stroke: var(--secondary);
+    stroke-width: 1;
+    fill: none;
+  }
+  .axis-tick {
+    stroke: var(--secondary);
+    stroke-width: 1;
+  }
+  .axis-label {
+    fill: var(--secondary);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .axis-title {
+    fill: var(--primary);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .point {
+    fill: var(--primary);
+    fill-opacity: 0.55;
+  }
+  .pc-line {
+    stroke: var(--accent);
+    fill: none;
+    stroke-linecap: round;
+  }
+  .pc-label {
+    fill: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .annotation {
+    fill: var(--secondary);
+    font-size: 12px;
+    font-style: italic;
+  }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 12px;
+    color: var(--secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .controls button:hover {
+    color: var(--primary);
+    border-color: var(--tertiary);
+  }
+  .phase {
+    font-size: 11px;
+    color: var(--tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="controls">
+  <button id="restart">Restart</button>
+  <span class="phase" id="phaseLabel"></span>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Synthetic height/weight data + real PCA. Computed once, deterministic seed.
+// ---------------------------------------------------------------------------
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rand) {
+  // Box-Muller
+  const u = 1 - rand();
+  const v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const rand = mulberry32(7);
+const N = 180;
+const data = [];
+for (let i = 0; i < N; i++) {
+  const h = 170 + 9 * gauss(rand);              // height in cm
+  const w = 0.55 * (h - 170) + 67 + 3.2 * gauss(rand); // weight in kg, correlated
+  data.push([h, w]);
+}
+
+// Mean-center
+const meanX = data.reduce((s, p) => s + p[0], 0) / N;
+const meanY = data.reduce((s, p) => s + p[1], 0) / N;
+const centered = data.map(p => [p[0] - meanX, p[1] - meanY]);
+
+// 2x2 covariance
+let cxx = 0, cyy = 0, cxy = 0;
+for (const [x, y] of centered) {
+  cxx += x * x;
+  cyy += y * y;
+  cxy += x * y;
+}
+cxx /= N; cyy /= N; cxy /= N;
+
+// Eigen of 2x2 symmetric [[cxx, cxy],[cxy, cyy]]
+const tr = cxx + cyy;
+const det = cxx * cyy - cxy * cxy;
+const disc = Math.sqrt(Math.max(0, (tr * tr) / 4 - det));
+const lam1 = tr / 2 + disc;   // larger eigenvalue
+const lam2 = tr / 2 - disc;
+// Eigenvector for lam1
+let v1x, v1y;
+if (Math.abs(cxy) > 1e-9) {
+  v1x = lam1 - cyy;
+  v1y = cxy;
+} else {
+  v1x = cxx >= cyy ? 1 : 0;
+  v1y = cxx >= cyy ? 0 : 1;
+}
+const n1 = Math.hypot(v1x, v1y);
+v1x /= n1; v1y /= n1;
+const v2x = -v1y, v2y = v1x;
+const angle = Math.atan2(v1y, v1x); // radians
+
+// ---------------------------------------------------------------------------
+// Plot geometry
+// ---------------------------------------------------------------------------
+const W = 720, H = 540;
+const PAD_L = 90, PAD_R = 60, PAD_T = 60, PAD_B = 80;
+const plotW = W - PAD_L - PAD_R;
+const plotH = H - PAD_T - PAD_B;
+const cx = PAD_L + plotW / 2;
+const cy = PAD_T + plotH / 2;
+
+const xExtent = 36;  // cm around mean
+const yExtent = 24;  // kg around mean
+const sx = plotW / (2 * xExtent);
+const sy = plotH / (2 * yExtent);
+
+function dataToPx(x, y) {
+  return [cx + x * sx, cy - y * sy];
+}
+
+// ---------------------------------------------------------------------------
+// SVG building
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Group that will rotate during the rotation phase
+const rotGroup = el('g', { id: 'rotGroup', transform: `rotate(0 ${cx} ${cy})` });
+svg.appendChild(rotGroup);
+
+// Original axes (sit OUTSIDE rotGroup so they don't rotate)
+const origAxes = el('g', { id: 'origAxes', opacity: '1' });
+svg.appendChild(origAxes);
+// x-axis
+origAxes.appendChild(el('line', {
+  x1: PAD_L, y1: PAD_T + plotH, x2: PAD_L + plotW, y2: PAD_T + plotH, class: 'axis-line'
+}));
+// y-axis
+origAxes.appendChild(el('line', {
+  x1: PAD_L, y1: PAD_T, x2: PAD_L, y2: PAD_T + plotH, class: 'axis-line'
+}));
+// x ticks
+const xTickVals = [-30, -15, 0, 15, 30];
+xTickVals.forEach(v => {
+  const [px] = dataToPx(v, 0);
+  origAxes.appendChild(el('line', {
+    x1: px, y1: PAD_T + plotH, x2: px, y2: PAD_T + plotH + 5, class: 'axis-tick'
+  }));
+  const t = el('text', {
+    x: px, y: PAD_T + plotH + 20, 'text-anchor': 'middle', class: 'axis-label'
+  });
+  t.textContent = String(Math.round(meanX + v));
+  origAxes.appendChild(t);
+});
+// y ticks
+const yTickVals = [-20, -10, 0, 10, 20];
+yTickVals.forEach(v => {
+  const [, py] = dataToPx(0, v);
+  origAxes.appendChild(el('line', {
+    x1: PAD_L - 5, y1: py, x2: PAD_L, y2: py, class: 'axis-tick'
+  }));
+  const t = el('text', {
+    x: PAD_L - 10, y: py + 4, 'text-anchor': 'end', class: 'axis-label'
+  });
+  t.textContent = String(Math.round(meanY + v));
+  origAxes.appendChild(t);
+});
+// axis titles
+const xTitle = el('text', {
+  x: cx, y: H - 30, 'text-anchor': 'middle', class: 'axis-title'
+});
+xTitle.textContent = 'height (cm)';
+origAxes.appendChild(xTitle);
+const yTitle = el('text', {
+  x: 30, y: cy, 'text-anchor': 'middle', class: 'axis-title',
+  transform: `rotate(-90 30 ${cy})`
+});
+yTitle.textContent = 'weight (kg)';
+origAxes.appendChild(yTitle);
+
+// Points (inside rotGroup so they rotate with the data)
+const pointsGroup = el('g', { id: 'points' });
+rotGroup.appendChild(pointsGroup);
+const pointEls = [];
+for (const [x, y] of centered) {
+  const [px, py] = dataToPx(x, y);
+  const c = el('circle', {
+    cx: px, cy: py, r: 3, class: 'point'
+  });
+  pointsGroup.appendChild(c);
+  pointEls.push(c);
+}
+
+// Principal axes — drawn inside rotGroup so they rotate with the data
+const pcGroup = el('g', { id: 'pc' });
+rotGroup.appendChild(pcGroup);
+const pcLen = Math.min(plotW, plotH) * 0.45;
+const pc1End = [cx + v1x * pcLen, cy - v1y * pcLen];
+const pc1Start = [cx - v1x * pcLen, cy + v1y * pcLen];
+const pc2End = [cx + v2x * pcLen * 0.55, cy - v2y * pcLen * 0.55];
+const pc2Start = [cx - v2x * pcLen * 0.55, cy + v2y * pcLen * 0.55];
+
+const pc1Line = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'pc-line', 'stroke-width': 2.2, opacity: 0.9
+});
+const pc2Line = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'pc-line', 'stroke-width': 1.4, opacity: 0.7
+});
+pcGroup.appendChild(pc1Line);
+pcGroup.appendChild(pc2Line);
+
+// PC labels (built later, positioned so they end up readable post-rotation)
+const pc1Label = el('text', {
+  x: pc1End[0] + 10, y: pc1End[1] - 6, class: 'pc-label', opacity: 0
+});
+pc1Label.textContent = 'PC1';
+const pc2Label = el('text', {
+  x: pc2End[0] + 8, y: pc2End[1] - 6, class: 'pc-label', opacity: 0
+});
+pc2Label.textContent = 'PC2';
+pcGroup.appendChild(pc1Label);
+pcGroup.appendChild(pc2Label);
+
+// Annotation that appears after rotation (lives outside rotGroup so it's upright)
+const annotation = el('text', {
+  x: cx, y: H - 30, 'text-anchor': 'middle', class: 'annotation', opacity: 0
+});
+annotation.textContent = 'almost no spread along the second axis — drop it and lose almost nothing';
+svg.appendChild(annotation);
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+function clamp01(t) { return Math.max(0, Math.min(1, t)); }
+
+const phases = [
+  { name: 'data',       dur: 1200 },
+  { name: 'pc1',        dur: 1400 },
+  { name: 'pc2',        dur: 1200 },
+  { name: 'fadeAxes',   dur: 1000 },
+  { name: 'rotate',     dur: 1800 },
+  { name: 'annotate',   dur: 2400 },
+  { name: 'hold',       dur: 1200 },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+const phaseLabel = document.getElementById('phaseLabel');
+
+let startTime = null;
+let rafId = null;
+// When set externally (e.g. from Playwright via page.evaluate), the animation
+// uses this virtual clock instead of the real one. This makes frame-by-frame
+// capture deterministic.
+window.__virtualTimeMs = null;
+
+function setPhaseLabel(name) {
+  phaseLabel.textContent = name;
+}
+
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+
+function applyFrame(t) {
+  // Determine current phase + local progress
+  let acc = 0;
+  let curPhase = phases[0];
+  let local = 0;
+  for (const p of phases) {
+    if (t < acc + p.dur) {
+      curPhase = p;
+      local = (t - acc) / p.dur;
+      break;
+    }
+    acc += p.dur;
+  }
+  setPhaseLabel(curPhase.name);
+
+  let pc1Progress = 0;
+  let pc2Progress = 0;
+  let pcLabelOpacity = 0;
+  let axesOpacity = 1;
+  let rotateAngle = 0;
+  let annotationOpacity = 0;
+
+  const order = phases.map(p => p.name);
+  const idx = order.indexOf(curPhase.name);
+
+  if (idx >= order.indexOf('pc1')) {
+    pc1Progress = idx === order.indexOf('pc1') ? easeInOut(local) : 1;
+  }
+  if (idx >= order.indexOf('pc2')) {
+    pc2Progress = idx === order.indexOf('pc2') ? easeInOut(local) : 1;
+  }
+  if (idx >= order.indexOf('pc2')) {
+    pcLabelOpacity = idx === order.indexOf('pc2') ? local : 1;
+  }
+  if (idx >= order.indexOf('fadeAxes')) {
+    axesOpacity = idx === order.indexOf('fadeAxes') ? 1 - easeInOut(local) : 0;
+  }
+  if (idx >= order.indexOf('rotate')) {
+    // PC1 currently slants up-right on screen. SVG +y is down, so a positive
+    // SVG rotation rotates clockwise on screen, which is what we need to flatten
+    // PC1 to horizontal. The amount is the math-angle PC1 makes above +x.
+    const targetAngle = (angle * 180) / Math.PI;
+    const rotProg = idx === order.indexOf('rotate') ? easeInOut(local) : 1;
+    rotateAngle = targetAngle * rotProg;
+  }
+  if (idx >= order.indexOf('annotate')) {
+    annotationOpacity = idx === order.indexOf('annotate') ? easeInOut(local) : 1;
+  }
+
+  pc1Line.setAttribute('x1', lerp(cx, pc1Start[0], pc1Progress));
+  pc1Line.setAttribute('y1', lerp(cy, pc1Start[1], pc1Progress));
+  pc1Line.setAttribute('x2', lerp(cx, pc1End[0], pc1Progress));
+  pc1Line.setAttribute('y2', lerp(cy, pc1End[1], pc1Progress));
+  pc2Line.setAttribute('x1', lerp(cx, pc2Start[0], pc2Progress));
+  pc2Line.setAttribute('y1', lerp(cy, pc2Start[1], pc2Progress));
+  pc2Line.setAttribute('x2', lerp(cx, pc2End[0], pc2Progress));
+  pc2Line.setAttribute('y2', lerp(cy, pc2End[1], pc2Progress));
+
+  pc1Label.setAttribute('opacity', pcLabelOpacity);
+  pc2Label.setAttribute('opacity', pcLabelOpacity);
+  origAxes.setAttribute('opacity', axesOpacity);
+  rotGroup.setAttribute('transform', `rotate(${rotateAngle} ${cx} ${cy})`);
+  annotation.setAttribute('opacity', annotationOpacity);
+}
+
+function frame(now) {
+  if (window.__virtualTimeMs !== null) {
+    renderAt(window.__virtualTimeMs);
+    rafId = requestAnimationFrame(frame);
+    return;
+  }
+  if (startTime === null) startTime = now;
+  const elapsed = now - startTime;
+  applyFrame(elapsed % totalDur);
+  rafId = requestAnimationFrame(frame);
+}
+
+document.getElementById('restart').addEventListener('click', () => {
+  startTime = null;
+});
+
+rafId = requestAnimationFrame(frame);
+</script>
+</body>
+</html>

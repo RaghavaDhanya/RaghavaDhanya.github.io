@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Covariance matrix as a transformation</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+    --grid-minor: #e6e6e6;
+    --grid-axis: #b0b0b0;
+    --vec-i: #c25450;
+    --vec-j: #3d6ea8;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .stage {
+    width: 720px;
+    height: 540px;
+    position: relative;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .grid-minor {
+    stroke: var(--grid-minor);
+    stroke-width: 0.8;
+    fill: none;
+  }
+  .grid-axis {
+    stroke: var(--grid-axis);
+    stroke-width: 1.2;
+    fill: none;
+  }
+  .axis-label {
+    fill: var(--secondary);
+    font-size: 13px;
+  }
+  .point {
+    fill: var(--primary);
+    fill-opacity: 0.55;
+  }
+  .vec-i {
+    stroke: var(--vec-i);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .vec-j {
+    stroke: var(--vec-j);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .vec-label-i {
+    fill: var(--vec-i);
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+  }
+  .vec-label-j {
+    fill: var(--vec-j);
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+  }
+  .inset-bg {
+    fill: var(--bg);
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .inset-axis {
+    stroke: var(--grid-minor);
+    stroke-width: 1;
+  }
+  .inset-point {
+    fill: var(--primary);
+    fill-opacity: 0.55;
+  }
+  .inset-pc {
+    stroke: #5a8a5a;
+    stroke-width: 1.6;
+    stroke-dasharray: 3 3;
+    fill: none;
+  }
+  .inset-caption {
+    fill: var(--secondary);
+    font-size: 11px;
+    font-style: italic;
+  }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 12px;
+    color: var(--secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrowI" viewBox="0 0 10 10" refX="8" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c25450" />
+      </marker>
+      <marker id="arrowJ" viewBox="0 0 10 10" refX="8" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3d6ea8" />
+      </marker>
+    </defs>
+  </svg>
+</div>
+
+<div class="controls">
+  <button id="restart">Restart</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Seeded height/weight data, same seed as the first animation for continuity.
+// ---------------------------------------------------------------------------
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rand) {
+  const u = 1 - rand();
+  const v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const rand = mulberry32(7);
+const N = 180;
+const raw = [];
+for (let i = 0; i < N; i++) {
+  const h = 170 + 9 * gauss(rand);
+  const w = 0.55 * (h - 170) + 67 + 3.2 * gauss(rand);
+  raw.push([h, w]);
+}
+const meanH = raw.reduce((s, p) => s + p[0], 0) / N;
+const meanW = raw.reduce((s, p) => s + p[1], 0) / N;
+const centered = raw.map(p => [p[0] - meanH, p[1] - meanW]);
+
+// ---------------------------------------------------------------------------
+// Covariance eigendecomposition → build a normalized transformation M with
+// the same eigenvectors but tuned eigenvalues so the cloud stays in-frame.
+// ---------------------------------------------------------------------------
+let cxx = 0, cyy = 0, cxy = 0;
+for (const [x, y] of centered) {
+  cxx += x * x; cyy += y * y; cxy += x * y;
+}
+cxx /= N; cyy /= N; cxy /= N;
+
+const tr = cxx + cyy;
+const det = cxx * cyy - cxy * cxy;
+const disc = Math.sqrt(Math.max(0, (tr * tr) / 4 - det));
+const lam1 = tr / 2 + disc;
+let v1x, v1y;
+if (Math.abs(cxy) > 1e-9) { v1x = lam1 - cyy; v1y = cxy; }
+else { v1x = cxx >= cyy ? 1 : 0; v1y = cxx >= cyy ? 0 : 1; }
+const n1 = Math.hypot(v1x, v1y); v1x /= n1; v1y /= n1;
+const v2x = -v1y, v2y = v1x;
+
+const LAM1_SCALED = 1.25;
+const LAM2_SCALED = 0.28;
+const M = [
+  [LAM1_SCALED * v1x * v1x + LAM2_SCALED * v2x * v2x,
+   LAM1_SCALED * v1x * v1y + LAM2_SCALED * v2x * v2y],
+  [LAM1_SCALED * v1x * v1y + LAM2_SCALED * v2x * v2y,
+   LAM1_SCALED * v1y * v1y + LAM2_SCALED * v2y * v2y],
+];
+function applyM([x, y]) {
+  return [M[0][0] * x + M[0][1] * y, M[1][0] * x + M[1][1] * y];
+}
+
+// ---------------------------------------------------------------------------
+// Plot geometry
+// ---------------------------------------------------------------------------
+const W = 720, H = 540;
+const PAD_L = 80, PAD_R = 60, PAD_T = 50, PAD_B = 70;
+const plotW = W - PAD_L - PAD_R;
+const plotH = H - PAD_T - PAD_B;
+const cx = PAD_L + plotW / 2;
+const cy = PAD_T + plotH / 2;
+const xExtent = 40;
+const yExtent = 28;
+const sx = plotW / (2 * xExtent);
+const sy = plotH / (2 * yExtent);
+
+function dataToPx(x, y) {
+  return [cx + x * sx, cy - y * sy];
+}
+
+// ---------------------------------------------------------------------------
+// SVG construction
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Grid. Each line has two endpoints in data space; we animate them to M * endpoint.
+const GRID_X_STEPS = [-30, -20, -10, 0, 10, 20, 30];
+const GRID_Y_STEPS = [-20, -10, 0, 10, 20];
+const GRID_X_EXTENT = 35;
+const GRID_Y_EXTENT = 25;
+
+// Two overlayed grids:
+//  - oldGrid: starts rectangular, warps under M (fades out at the end)
+//  - newGrid: stays upright throughout, invisible until the reveal phase
+const oldGridGroup = el('g', { id: 'oldGrid' });
+const newGridGroup = el('g', { id: 'newGrid', opacity: '0' });
+svg.appendChild(oldGridGroup);
+svg.appendChild(newGridGroup);
+
+const gridLines = [];
+function addGridLine(groupOld, groupNew, orig, trans, isAxis) {
+  const elOld = el('line', { class: isAxis ? 'grid-axis' : 'grid-minor' });
+  const elNew = el('line', { class: isAxis ? 'grid-axis' : 'grid-minor' });
+  groupOld.appendChild(elOld);
+  groupNew.appendChild(elNew);
+  gridLines.push({ orig, trans, elOld, elNew });
+}
+for (const x of GRID_X_STEPS) {
+  addGridLine(
+    oldGridGroup, newGridGroup,
+    [[x, -GRID_Y_EXTENT], [x, GRID_Y_EXTENT]],
+    [applyM([x, -GRID_Y_EXTENT]), applyM([x, GRID_Y_EXTENT])],
+    x === 0,
+  );
+}
+for (const y of GRID_Y_STEPS) {
+  addGridLine(
+    oldGridGroup, newGridGroup,
+    [[-GRID_X_EXTENT, y], [GRID_X_EXTENT, y]],
+    [applyM([-GRID_X_EXTENT, y]), applyM([GRID_X_EXTENT, y])],
+    y === 0,
+  );
+}
+
+// --- Inset: the source data, with its principal direction marked ---
+// Makes the connection visible between the cloud the covariance matrix came
+// from and the direction the main animation is pulling toward.
+(function drawInset() {
+  const INSET_X = 495, INSET_Y = 18, INSET_W = 200, INSET_H = 124;
+  const INSET_PAD = 10;
+  const CAPTION_H = 18;
+  const insetPlotW = INSET_W - 2 * INSET_PAD;
+  const insetPlotH = INSET_H - 2 * INSET_PAD - CAPTION_H;
+  const insetCx = INSET_X + INSET_W / 2;
+  const insetCy = INSET_Y + INSET_PAD + insetPlotH / 2;
+  const insetXExtent = 30;
+  const insetYExtent = 22;
+  const isx = insetPlotW / (2 * insetXExtent);
+  const isy = insetPlotH / (2 * insetYExtent);
+  function iToPx(x, y) { return [insetCx + x * isx, insetCy - y * isy]; }
+
+  const g = el('g');
+  svg.appendChild(g);
+  g.appendChild(el('rect', {
+    x: INSET_X, y: INSET_Y, width: INSET_W, height: INSET_H, rx: 6, class: 'inset-bg'
+  }));
+  // crosshairs
+  g.appendChild(el('line', {
+    x1: INSET_X + INSET_PAD, y1: insetCy,
+    x2: INSET_X + INSET_W - INSET_PAD, y2: insetCy, class: 'inset-axis'
+  }));
+  g.appendChild(el('line', {
+    x1: insetCx, y1: INSET_Y + INSET_PAD,
+    x2: insetCx, y2: INSET_Y + INSET_PAD + insetPlotH, class: 'inset-axis'
+  }));
+  // scatter
+  for (const [x, y] of centered) {
+    const [px, py] = iToPx(x, y);
+    g.appendChild(el('circle', { cx: px, cy: py, r: 1.3, class: 'inset-point' }));
+  }
+  // principal direction — same v1 used for the main transform
+  const pHalf = 28; // data units
+  const [p1x, p1y] = iToPx(-v1x * pHalf, -v1y * pHalf);
+  const [p2x, p2y] = iToPx( v1x * pHalf,  v1y * pHalf);
+  g.appendChild(el('line', { x1: p1x, y1: p1y, x2: p2x, y2: p2y, class: 'inset-pc' }));
+  // caption
+  const cap = el('text', {
+    x: insetCx, y: INSET_Y + INSET_H - 6, 'text-anchor': 'middle', class: 'inset-caption'
+  });
+  cap.textContent = 'source data · principal direction';
+  g.appendChild(cap);
+})();
+
+// Axis labels — refer to the original (height, weight) coordinate system, so
+// they fade out with the old warped grid when the "new view" reveals.
+const labelsGroup = el('g', { id: 'axisLabels' });
+svg.appendChild(labelsGroup);
+const xLab = el('text', {
+  x: PAD_L + plotW, y: cy + 18, 'text-anchor': 'end', class: 'axis-label'
+});
+xLab.textContent = 'height (centered)';
+labelsGroup.appendChild(xLab);
+const yLab = el('text', {
+  x: cx, y: PAD_T - 10, 'text-anchor': 'middle', class: 'axis-label'
+});
+yLab.textContent = 'weight (centered)';
+labelsGroup.appendChild(yLab);
+
+// Scatter points
+const pointsGroup = el('g');
+svg.appendChild(pointsGroup);
+const pointEls = [];
+const endCentered = centered.map(p => applyM(p));
+for (let i = 0; i < N; i++) {
+  const [px, py] = dataToPx(centered[i][0], centered[i][1]);
+  const c = el('circle', { cx: px, cy: py, r: 3, class: 'point' });
+  pointsGroup.appendChild(c);
+  pointEls.push(c);
+}
+
+// Basis vectors — scaled to be clearly visible (1 unit is tiny on our scale)
+const REF_SCALE = 15;
+const iOrig = [REF_SCALE, 0];
+const iTrans = applyM(iOrig);
+const jOrig = [0, REF_SCALE];
+const jTrans = applyM(jOrig);
+
+const vecI = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'vec-i', 'marker-end': 'url(#arrowI)',
+});
+const vecJ = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'vec-j', 'marker-end': 'url(#arrowJ)',
+});
+svg.appendChild(vecI);
+svg.appendChild(vecJ);
+
+const iLabel = el('text', { class: 'vec-label-i' });
+iLabel.textContent = 'î';
+const jLabel = el('text', { class: 'vec-label-j' });
+jLabel.textContent = 'ĵ';
+svg.appendChild(iLabel);
+svg.appendChild(jLabel);
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+const phases = [
+  { name: 'hold_original',     dur: 1000 },
+  { name: 'transform',         dur: 2500 },
+  { name: 'hold_transformed',  dur: 1000 },
+  { name: 'reveal_new_view',   dur: 1500 },
+  { name: 'hold_new_view',     dur: 1500 },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpP(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t)]; }
+
+function setLineData(elLine, start, end) {
+  const [x1, y1] = dataToPx(start[0], start[1]);
+  const [x2, y2] = dataToPx(end[0], end[1]);
+  elLine.setAttribute('x1', x1);
+  elLine.setAttribute('y1', y1);
+  elLine.setAttribute('x2', x2);
+  elLine.setAttribute('y2', y2);
+}
+
+function applyFrame(t) {
+  let acc = 0;
+  let progress = 0;        // warp progress of the old grid + scatter + vectors
+  let oldOpacity = 1;      // old (warping) grid opacity
+  let newOpacity = 0;      // new (upright) grid opacity
+  for (const p of phases) {
+    if (t < acc + p.dur) {
+      const local = (t - acc) / p.dur;
+      if (p.name === 'hold_original') {
+        progress = 0;
+      } else if (p.name === 'transform') {
+        progress = easeInOut(local);
+      } else if (p.name === 'hold_transformed') {
+        progress = 1;
+      } else if (p.name === 'reveal_new_view') {
+        progress = 1;
+        oldOpacity = 1 - easeInOut(local);
+        newOpacity = easeInOut(local);
+      } else if (p.name === 'hold_new_view') {
+        progress = 1;
+        oldOpacity = 0;
+        newOpacity = 1;
+      }
+      break;
+    }
+    acc += p.dur;
+  }
+
+  // Grids. Old grid animates from orig → trans; new grid stays at orig.
+  for (const g of gridLines) {
+    const s = lerpP(g.orig[0], g.trans[0], progress);
+    const e = lerpP(g.orig[1], g.trans[1], progress);
+    setLineData(g.elOld, s, e);
+    setLineData(g.elNew, g.orig[0], g.orig[1]);
+  }
+  oldGridGroup.setAttribute('opacity', oldOpacity);
+  newGridGroup.setAttribute('opacity', newOpacity);
+  labelsGroup.setAttribute('opacity', oldOpacity);
+
+  // Scatter
+  for (let i = 0; i < N; i++) {
+    const x = lerp(centered[i][0], endCentered[i][0], progress);
+    const y = lerp(centered[i][1], endCentered[i][1], progress);
+    const [px, py] = dataToPx(x, y);
+    pointEls[i].setAttribute('cx', px);
+    pointEls[i].setAttribute('cy', py);
+  }
+
+  // Basis vectors
+  const iTip = lerpP(iOrig, iTrans, progress);
+  const jTip = lerpP(jOrig, jTrans, progress);
+  const [iTipPx, iTipPy] = dataToPx(iTip[0], iTip[1]);
+  const [jTipPx, jTipPy] = dataToPx(jTip[0], jTip[1]);
+  vecI.setAttribute('x2', iTipPx);
+  vecI.setAttribute('y2', iTipPy);
+  vecJ.setAttribute('x2', jTipPx);
+  vecJ.setAttribute('y2', jTipPy);
+  // Labels offset from the tips so they don't overlap the arrowhead
+  iLabel.setAttribute('x', iTipPx + 10);
+  iLabel.setAttribute('y', iTipPy + 4);
+  jLabel.setAttribute('x', jTipPx + 8);
+  jLabel.setAttribute('y', jTipPy - 8);
+}
+
+// Clock
+let startTime = null;
+window.__virtualTimeMs = null;
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+
+function frame(now) {
+  if (window.__virtualTimeMs !== null) {
+    renderAt(window.__virtualTimeMs);
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (startTime === null) startTime = now;
+  applyFrame((now - startTime) % totalDur);
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('restart').addEventListener('click', () => {
+  startTime = null;
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
