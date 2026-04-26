@@ -25,7 +25,7 @@ What PCA does is figure out how many actually independent things a dataset has, 
 
 Let's build up to it. Start with the simplest case.
 
-Take a column of body temperatures. Every row starts with "36" or "37", maybe "38" or "39" if someone has a fever. The "30-something" part is present in every row. It tells us nothing about who has a fever.
+Take a column of body temperatures. Every row is around 36 or 37, maybe 38 or 39 if someone has a fever. Take away 37 from every value, and the differences between rows become much clearer.
 
 The only informative part are the changes on top: 36.8, 37.4, 38.9. The rest is constant, and constants have no information (in a given dataset).
 
@@ -78,6 +78,8 @@ That's exactly what PCA needs. The job is to rank directions by how much varianc
 We need to calculate covariance across all the columns. For $k$ features, the **covariance matrix** is a $k \times k$ grid where entry $(i, j)$ is $\text{cov}(\text{feature}_i, \text{feature}_j)$. The diagonal entries are the per-column variances (since $\text{cov}(x, x) = \sigma^2(x)$). The other entries are the pairwise covariances. The matrix is symmetric because $\text{cov}(x, y) = \text{cov}(y, x)$.
 
 That matrix is the full description of how our data varies. How each column varies with respect to the others. 
+
+But couldn't we just drop the redundant columns directly? In the height/weight cloud, neither height nor weight is redundant on its own. Both vary a lot. The redundancy is between them, along the diagonal of the cloud. To see it, we have to switch axes.
 
 Ok, now we have a matrix that tells us all the diagonal variances. But how to switch to a new coordinate system aligned with those? After we do that, we can drop the least variant features.
 
@@ -173,7 +175,7 @@ where:
 
 [^nonneg]: The covariance matrix's eigenvalues are never negative because variance can't be negative. So in the eigenvector animation, the eigenvectors only stretch or compress, they never flip. For a general matrix, a negative eigenvalue would flip the vector across the origin, but we can't see that here.
 
-[^svd]: SVD (Singular Value Decomposition) is a more general decomposition method that works on any matrix. For PCA's covariance matrix, it functions the same as eigen decomposition and gives the same principal components. So most PCA implementations use SVD instead of eigen.
+[^svd]: SVD (Singular Value Decomposition) is a more general decomposition method that works on any matrix. For PCA's covariance matrix, it functions the same as eigendecomposition and gives the same principal components. So most PCA implementations use SVD instead of eigendecomposition.
 
 [^orth]: Why does PCA create orthogonal axes? Each new component is defined as the direction of maximum variance among what's *left* after the previous ones are accounted for; in 2D that remaining space is literally the perpendicular line, so PC2 has no choice. In higher dimensions the same thing keeps happening. Mathematically, PCA's components are eigenvectors of the covariance matrix, which is symmetric, and eigenvectors of symmetric matrices are always mutually orthogonal. Other dimensionality-reduction methods (ICA, autoencoders) don't have this and can find non-orthogonal directions.
 
