@@ -1,11 +1,10 @@
 ---
 title: "My Intuition of PCA"
 date: 2026-04-21T20:54:06+05:30
-draft: true
 math: true
 tags: ["pca", "linear-algebra", "ml", "ai", "dimensionality-reduction"]
 categories:
-    - general
+    - intuitions
 cover:
     image: /images/intuitive-understanding-of-pca/cover.png
     caption: "Principal directions of a tilted Gaussian"
