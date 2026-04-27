@@ -27,7 +27,7 @@ markup:
 params:
   # cover:
   #   hidden: false
-  # env: production
+  env: production
   social: false
   label:
     icon: Logo_2_0.svg
