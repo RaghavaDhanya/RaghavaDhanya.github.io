@@ -1,0 +1,124 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "blog-animations"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "imageio" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "playwright" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "imageio", specifier = ">=2.34" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "pillow", specifier = ">=10.0" },
+    { name = "playwright", specifier = ">=1.45" },
+]
+
+[[package]]
+name = "greenlet"
+version = "3.4.0"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/greenlet/3.4.0/greenlet-3.4.0.tar.gz", hash = "sha256:f50a96b64dafd6169e595a5c56c9146ef80333e67d4476a65a9c55f400fc22ff" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/macosx_11_0_universal2/greenlet/3.4.0/greenlet-3.4.0-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:805bebb4945094acbab757d34d6e1098be6de8966009ab9ca54f06ff492def58" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c660bce1940a1acae5f51f0a064f1bc785d07ea16efcb4bc708090afc4d69e83" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/macosx_11_0_universal2/greenlet/3.4.0/greenlet-3.4.0-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:1a54a921561dd9518d31d2d3db4d7f80e589083063ab4d3e2e950756ef809e1a" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a1c4f6b453006efb8310affb2d132832e9bbb4fc01ce6df6b70d810d38f1f6dc" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/macosx_11_0_universal2/greenlet/3.4.0/greenlet-3.4.0-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:43748988b097f9c6f09364f260741aa73c80747f63389824435c7a50bfdfd5c1" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f82cb6cddc27dd81c96b1506f4aa7def15070c3b2a67d4e46fd19016aacce6cf" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/macosx_11_0_universal2/greenlet/3.4.0/greenlet-3.4.0-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:10a07aca6babdd18c16a3f4f8880acfffc2b88dfe431ad6aa5f5740759d7d75e" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4df3b0b2289ec686d3c821a5fee44259c05cfe824dd5e6e12c8e5f5df23085cf" },
+]
+
+[[package]]
+name = "imageio"
+version = "2.37.3"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pillow" },
+]
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/ImageIO/2.37.3/imageio-2.37.3.tar.gz", hash = "sha256:bbb37efbfc4c400fcd534b367b91fcd66d5da639aaa138034431a1c5e0a41451" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/any/imageio/2.37.3/imageio-2.37.3-py3-none-any.whl", hash = "sha256:f0acb95916a547af41eae3e0c6d2b0dab99c876e7e925c859e7c5b69fc5ca917" },
+]
+
+[[package]]
+name = "numpy"
+version = "2.4.2"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/numpy/2.4.2/numpy-2.4.2.tar.gz", hash = "sha256:659a6107e31a83c4e33f763942275fd278b21d095094044eb35569e86a21ddae" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/linux_x86_64/numpy/2.4.2/numpy-2.4.2-cp311-cp311-linux_x86_64.whl", hash = "sha256:c32aa290a332f7f515f30f4042bef8ceef9320aac7127c15b6c2b05ab3f6054f" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/macosx_14_0_x86_64/numpy/2.4.2/numpy-2.4.2-cp311-cp311-macosx_14_0_x86_64.whl", hash = "sha256:88f2cd2141b878a7f6ca550e629922c509ee4dae00313fec0feeb4e89683ec38" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/linux_x86_64/numpy/2.4.2/numpy-2.4.2-cp312-cp312-linux_x86_64.whl", hash = "sha256:1a8de4f724dd3062b57dd185b44c01aae6fda0f48d33ceef0f66e91230889e09" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/macosx_14_0_x86_64/numpy/2.4.2/numpy-2.4.2-cp312-cp312-macosx_14_0_x86_64.whl", hash = "sha256:5323da77ed7179c2a646d6c80936a0bd64b6e05d7e1378f622c821cf413f8f2e" },
+]
+
+[[package]]
+name = "pillow"
+version = "12.2.0"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/pillow/12.2.0/pillow-12.2.0.tar.gz", hash = "sha256:a830b1a40919539d07806aa58e1b114df53ddd43213d9c8b75847eee6c0182b5" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/macosx_10_10_x86_64/pillow/12.2.0/pillow-12.2.0-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:8be29e59487a79f173507c30ddf57e733a357f67881430449bb32614075a40ab" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/macosx_11_0_arm64/pillow/12.2.0/pillow-12.2.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:71cde9a1e1551df7d34a25462fc60325e8a11a82cc2e2f54578e5e9a1e153d65" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/manylinux2014_x86_64/manylinux_2_17_x86_64/pillow/12.2.0/pillow-12.2.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:8bd7903a5f2a4545f6fd5935c90058b89d30045568985a71c79f5fd6edf9b91e" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp311/cp311/manylinux_2_27_x86_64/manylinux_2_28_x86_64/pillow/12.2.0/pillow-12.2.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e74473c875d78b8e9d5da2a70f7099549f9eb37ded4e2f6a463e60125bccd176" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/macosx_10_13_x86_64/pillow/12.2.0/pillow-12.2.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:2d192a155bbcec180f8564f693e6fd9bccff5a7af9b32e2e4bf8c9c69dbad6b5" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/macosx_11_0_arm64/pillow/12.2.0/pillow-12.2.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f3f40b3c5a968281fd507d519e444c35f0ff171237f4fdde090dd60699458421" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/manylinux2014_x86_64/manylinux_2_17_x86_64/pillow/12.2.0/pillow-12.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:b86024e52a1b269467a802258c25521e6d742349d760728092e1bc2d135b4d76" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp312/cp312/manylinux_2_27_x86_64/manylinux_2_28_x86_64/pillow/12.2.0/pillow-12.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:62f5409336adb0663b7caa0da5c7d9e7bdbaae9ce761d34669420c2a801b2780" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/macosx_10_13_x86_64/pillow/12.2.0/pillow-12.2.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:5d2fd0fa6b5d9d1de415060363433f28da8b1526c1c129020435e186794b3795" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/macosx_11_0_arm64/pillow/12.2.0/pillow-12.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:56b25336f502b6ed02e889f4ece894a72612fe885889a6e8c4c80239ff6e5f5f" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/manylinux2014_x86_64/manylinux_2_17_x86_64/pillow/12.2.0/pillow-12.2.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:03f6fab9219220f041c74aeaa2939ff0062bd5c364ba9ce037197f4c6d498cd9" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/manylinux_2_27_x86_64/manylinux_2_28_x86_64/pillow/12.2.0/pillow-12.2.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:eedf4b74eda2b5a4b2b2fb4c006d6295df3bf29e459e198c90ea48e130dc75c3" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/macosx_10_15_x86_64/pillow/12.2.0/pillow-12.2.0-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:2bb4a8d594eacdfc59d9e5ad972aa8afdd48d584ffd5f13a937a664c3e7db0ed" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/macosx_11_0_arm64/pillow/12.2.0/pillow-12.2.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:80b2da48193b2f33ed0c32c38140f9d3186583ce7d516526d462645fd98660ae" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/manylinux2014_x86_64/manylinux_2_17_x86_64/pillow/12.2.0/pillow-12.2.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:7b14cc0106cd9aecda615dd6903840a058b4700fcb817687d0ee4fc8b6e389be" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/manylinux_2_27_x86_64/manylinux_2_28_x86_64/pillow/12.2.0/pillow-12.2.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4bfd07bc812fbd20395212969e41931001fd59eb55a60658b0e5710872e95286" },
+]
+
+[[package]]
+name = "playwright"
+version = "1.50.0"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+dependencies = [
+    { name = "greenlet" },
+    { name = "pyee" },
+]
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/playwright/1.50.0/playwright-1.50.0.tar.gz", hash = "sha256:6735e0e177b94931f2d249f4be7304cf5290ef85ff6cfb0a2df4836f2b5f5194" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/macosx_10_13_x86_64/playwright/1.50.0/playwright-1.50.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:f36d754a6c5bd9bf7f14e8f57a2aea6fd08f39ca4c8476481b9c83e299531148" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/macosx_11_0_arm64/playwright/1.50.0/playwright-1.50.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:40f274384591dfd27f2b014596250b2250c843ed1f7f4ef5d2960ecb91b4961e" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/macosx_11_0_universal2/playwright/1.50.0/playwright-1.50.0-py3-none-macosx_11_0_universal2.whl", hash = "sha256:9922ef9bcd316995f01e220acffd2d37a463b4ad10fd73e388add03841dfa230" },
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/manylinux1_x86_64/playwright/1.50.0/playwright-1.50.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:8fc628c492d12b13d1f347137b2ac6c04f98197ff0985ef0403a9a9ee0d39131" },
+]
+
+[[package]]
+name = "pyee"
+version = "12.1.1"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/pyee/12.1.1/pyee-12.1.1.tar.gz", hash = "sha256:bbc33c09e2ff827f74191e3e5bbc6be7da02f627b7ec30d86f5ce1a6fb2424a3" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/any/pyee/12.1.1/pyee-12.1.1-py3-none-any.whl", hash = "sha256:a1687d05647a7a3973d314647453c6e0bd32b364eb952609a5616b73cb1d9f08" },
+]
+
+[[package]]
+name = "typing-extensions"
+version = "4.15.0"
+source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
+sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/typing-extensions/4.15.0/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466" }
+wheels = [
+    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/any/typing_extensions/4.15.0/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:04dd06fb0514069f55bdd860d55fdf78d17a5a70c920c5728ed0e3a6ef083044" },
+]

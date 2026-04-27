@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Correlation &amp; covariance — morph</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .stage {
+    width: 720px;
+    height: 540px;
+    position: relative;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .axis-line {
+    stroke: var(--secondary);
+    stroke-width: 1;
+    fill: none;
+  }
+  .axis-label {
+    fill: var(--secondary);
+    font-size: 13px;
+  }
+  .point {
+    fill: var(--primary);
+    fill-opacity: 0.55;
+  }
+  .readout {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 48px;
+    font-size: 15px;
+    color: var(--primary);
+  }
+  .readout .item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .readout .key {
+    color: var(--secondary);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .readout .val {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  .rbar {
+    position: absolute;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .rbar-track {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+  .rbar-zero, .rbar-tick {
+    position: absolute;
+    top: -4px;
+    width: 1px;
+    height: 10px;
+    background: var(--tertiary);
+  }
+  .rbar-tick.left { left: 0; }
+  .rbar-tick.right { left: 100%; }
+  .rbar-zero { left: 50%; background: var(--secondary); }
+  .rbar-labels {
+    position: absolute;
+    top: 14px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--tertiary);
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .rbar-dot {
+    position: absolute;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--primary);
+    transform: translateX(-50%);
+    transition: none;
+  }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 12px;
+    color: var(--secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="readout">
+    <div class="item">
+      <span class="key">r</span>
+      <span class="val" id="rVal">+0.000</span>
+    </div>
+    <div class="item">
+      <span class="key">cov</span>
+      <span class="val" id="covVal">+0.00</span>
+    </div>
+  </div>
+
+  <div class="rbar">
+    <div class="rbar-track">
+      <div class="rbar-tick left"></div>
+      <div class="rbar-zero"></div>
+      <div class="rbar-tick right"></div>
+      <div class="rbar-dot" id="rbarDot" style="left: 50%"></div>
+      <div class="rbar-labels">
+        <span>−1</span><span>0</span><span>+1</span>
+      </div>
+    </div>
+  </div>
+
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="controls">
+  <button id="restart">Restart</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Fixed latent points. Each point has a pair (a, b) ~ N(0, 1); we morph them
+// into display coords via a 2x2 transform that changes over time.
+// ---------------------------------------------------------------------------
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rand) {
+  const u = 1 - rand();
+  const v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const rand = mulberry32(13);
+const N = 180;
+const latents = [];
+for (let i = 0; i < N; i++) {
+  latents.push([gauss(rand) * 2, gauss(rand) * 2]); // std = 2
+}
+
+// ---------------------------------------------------------------------------
+// Plot geometry
+// ---------------------------------------------------------------------------
+const W = 720, H = 540;
+const PAD = 40;
+const plotSize = 380;
+const cx = W / 2;
+const cy = H / 2 + 40; // shift down a bit to leave room for readout
+const half = plotSize / 2;
+const pxPerUnit = half / 4.5; // latent range ~ ±4.5 std covers the cloud comfortably
+
+function dataToPx(x, y) {
+  return [cx + x * pxPerUnit, cy - y * pxPerUnit];
+}
+
+// ---------------------------------------------------------------------------
+// SVG setup
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Axes — thin gray crosshairs through the center
+const axes = el('g');
+svg.appendChild(axes);
+axes.appendChild(el('line', {
+  x1: cx - half, y1: cy, x2: cx + half, y2: cy, class: 'axis-line'
+}));
+axes.appendChild(el('line', {
+  x1: cx, y1: cy - half, x2: cx, y2: cy + half, class: 'axis-line'
+}));
+
+// x-axis label
+const xLabel = el('text', {
+  x: cx + half + 8, y: cy + 4, class: 'axis-label'
+});
+xLabel.textContent = 'x';
+axes.appendChild(xLabel);
+// y-axis label
+const yLabel = el('text', {
+  x: cx - 4, y: cy - half - 8, 'text-anchor': 'end', class: 'axis-label'
+});
+yLabel.textContent = 'y';
+axes.appendChild(yLabel);
+
+// Points
+const pointsGroup = el('g');
+svg.appendChild(pointsGroup);
+const pointEls = [];
+for (let i = 0; i < N; i++) {
+  const c = el('circle', { cx: cx, cy: cy, r: 3, class: 'point' });
+  pointsGroup.appendChild(c);
+  pointEls.push(c);
+}
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+const phases = [
+  { name: 'hold_diag_up',  dur: 800 },
+  { name: 'tip_to_flat',   dur: 2000 },
+  { name: 'tip_to_down',   dur: 2000 },
+  { name: 'expand_round',  dur: 2000 },
+  { name: 'hold_round',    dur: 1200 },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+function paramsAt(t) {
+  // Defaults: tight diagonal up (major=1, minor=0.18, θ=+45°)
+  let major = 1.0;
+  let minor = 0.18;
+  let angle = Math.PI / 4;
+
+  let acc = 0;
+  for (const p of phases) {
+    if (t < acc + p.dur) {
+      const local = (t - acc) / p.dur;
+      if (p.name === 'hold_diag_up') {
+        // defaults
+      } else if (p.name === 'tip_to_flat') {
+        // θ from +45° to 0°
+        angle = Math.PI / 4 * (1 - easeInOut(local));
+      } else if (p.name === 'tip_to_down') {
+        // θ from 0° to -45°
+        angle = -Math.PI / 4 * easeInOut(local);
+      } else if (p.name === 'expand_round') {
+        angle = -Math.PI / 4;
+        // minor from 0.18 → 0.95 (near round)
+        minor = 0.18 + (0.95 - 0.18) * easeInOut(local);
+      } else if (p.name === 'hold_round') {
+        angle = -Math.PI / 4;
+        minor = 0.95;
+      }
+      return { major, minor, angle };
+    }
+    acc += p.dur;
+  }
+  return { major, minor, angle };
+}
+
+function computeCloud(t) {
+  const { major, minor, angle } = paramsAt(t);
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  // Rows of the transform: [ major*c,  -minor*s ]
+  //                        [ major*s,   minor*c ]
+  const xs = new Float32Array(N);
+  const ys = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const a = latents[i][0];
+    const b = latents[i][1];
+    xs[i] = major * c * a - minor * s * b;
+    ys[i] = major * s * a + minor * c * b;
+  }
+  return { xs, ys };
+}
+
+function stats(xs, ys) {
+  let mx = 0, my = 0;
+  for (let i = 0; i < N; i++) { mx += xs[i]; my += ys[i]; }
+  mx /= N; my /= N;
+  let vxx = 0, vyy = 0, vxy = 0;
+  for (let i = 0; i < N; i++) {
+    const dx = xs[i] - mx;
+    const dy = ys[i] - my;
+    vxx += dx * dx;
+    vyy += dy * dy;
+    vxy += dx * dy;
+  }
+  vxx /= N; vyy /= N; vxy /= N;
+  const sx = Math.sqrt(vxx);
+  const sy = Math.sqrt(vyy);
+  const r = (sx > 1e-9 && sy > 1e-9) ? vxy / (sx * sy) : 0;
+  return { cov: vxy, r };
+}
+
+function fmtSigned(x, digits) {
+  const sign = x >= 0 ? '+' : '−';
+  return sign + Math.abs(x).toFixed(digits);
+}
+
+const rValEl = document.getElementById('rVal');
+const covValEl = document.getElementById('covVal');
+const rDot = document.getElementById('rbarDot');
+
+function applyFrame(t) {
+  const { xs, ys } = computeCloud(t);
+  for (let i = 0; i < N; i++) {
+    const [px, py] = dataToPx(xs[i], ys[i]);
+    pointEls[i].setAttribute('cx', px);
+    pointEls[i].setAttribute('cy', py);
+  }
+  const { r, cov } = stats(xs, ys);
+  rValEl.textContent = fmtSigned(r, 3);
+  covValEl.textContent = fmtSigned(cov, 2);
+  // Position the r-bar dot. Map r in [-1, +1] to [0%, 100%].
+  const pct = ((r + 1) / 2) * 100;
+  rDot.style.left = pct + '%';
+}
+
+// ---------------------------------------------------------------------------
+// Clock — real-time by default, virtual when driven externally
+// ---------------------------------------------------------------------------
+let startTime = null;
+window.__virtualTimeMs = null;
+
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+
+function frame(now) {
+  if (window.__virtualTimeMs !== null) {
+    renderAt(window.__virtualTimeMs);
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (startTime === null) startTime = now;
+  applyFrame((now - startTime) % totalDur);
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('restart').addEventListener('click', () => {
+  startTime = null;
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

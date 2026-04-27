@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scaling matrix transformation</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+    --grid-minor: #e6e6e6;
+    --grid-axis: #b0b0b0;
+    --vec-i: #c25450;
+    --vec-j: #3d6ea8;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .stage {
+    width: 720px;
+    height: 540px;
+    position: relative;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .grid-minor {
+    stroke: var(--grid-minor);
+    stroke-width: 0.8;
+    fill: none;
+  }
+  .grid-axis {
+    stroke: var(--grid-axis);
+    stroke-width: 1.2;
+    fill: none;
+  }
+  .axis-label {
+    fill: var(--secondary);
+    font-size: 13px;
+  }
+  .point {
+    fill: var(--primary);
+    fill-opacity: 0.55;
+  }
+  .vec-i {
+    stroke: var(--vec-i);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .vec-j {
+    stroke: var(--vec-j);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .vec-label-i {
+    fill: var(--vec-i);
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+  }
+  .vec-label-j {
+    fill: var(--vec-j);
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+  }
+  .matrix-bg {
+    fill: var(--bg);
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .matrix-bracket {
+    stroke: var(--primary);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .matrix-entry {
+    font-size: 22px;
+    font-family: 'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif;
+  }
+  .matrix-entry-static {
+    fill: var(--secondary);
+  }
+  .matrix-entry-a {
+    fill: var(--vec-i);
+    font-weight: 600;
+  }
+  .matrix-entry-b {
+    fill: var(--vec-j);
+    font-weight: 600;
+  }
+  .matrix-entry-c {
+    fill: #5a8a5a;
+    font-weight: 600;
+  }
+  .matrix-caption {
+    fill: var(--secondary);
+    font-size: 11px;
+    font-style: italic;
+  }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 12px;
+    color: var(--secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrowI" viewBox="0 0 10 10" refX="8" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c25450" />
+      </marker>
+      <marker id="arrowJ" viewBox="0 0 10 10" refX="8" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3d6ea8" />
+      </marker>
+    </defs>
+  </svg>
+</div>
+
+<div class="controls">
+  <button id="restart">Restart</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Points: a circular cluster, symmetric about the origin. Iterate over integer
+// indices and scale by STEP so we don't drift off-grid from float accumulation.
+// ---------------------------------------------------------------------------
+const points = [];
+const STEP = 0.5;
+const HALF_STEPS = 5;            // grid extends from -2.5 to +2.5 in 0.5 steps
+const RADIUS = HALF_STEPS * STEP; // 2.5
+for (let i = -HALF_STEPS; i <= HALF_STEPS; i++) {
+  for (let j = -HALF_STEPS; j <= HALF_STEPS; j++) {
+    const x = i * STEP;
+    const y = j * STEP;
+    if (x * x + y * y <= RADIUS * RADIUS + 1e-6) {
+      points.push([x, y]);
+    }
+  }
+}
+const N = points.length;
+
+// ---------------------------------------------------------------------------
+// Plot geometry
+// ---------------------------------------------------------------------------
+const W = 720, H = 540;
+const PAD_L = 70, PAD_R = 60, PAD_T = 50, PAD_B = 60;
+const plotW = W - PAD_L - PAD_R;
+const plotH = H - PAD_T - PAD_B;
+const cx = PAD_L + plotW / 2;
+const cy = PAD_T + plotH / 2;
+const xExtent = 11;
+const yExtent = 8;
+const sx = plotW / (2 * xExtent);
+const sy = plotH / (2 * yExtent);
+
+function dataToPx(x, y) {
+  return [cx + x * sx, cy - y * sy];
+}
+
+// ---------------------------------------------------------------------------
+// SVG construction
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Static reference grid. We deliberately do NOT transform the grid with the
+// matrix here, because for an intro-to-matrices example the grid is more
+// useful as a fixed coordinate system the points move against.
+const GRID_X_STEPS = [-9, -6, -3, 0, 3, 6, 9];
+const GRID_Y_STEPS = [-6, -3, 0, 3, 6];
+const GRID_X_EXTENT = 10;
+const GRID_Y_EXTENT = 7;
+
+const gridGroup = el('g', { id: 'grid' });
+svg.appendChild(gridGroup);
+
+function addGridLine(start, end, isAxis) {
+  const [x1, y1] = dataToPx(start[0], start[1]);
+  const [x2, y2] = dataToPx(end[0], end[1]);
+  gridGroup.appendChild(el('line', {
+    x1, y1, x2, y2,
+    class: isAxis ? 'grid-axis' : 'grid-minor',
+  }));
+}
+for (const x of GRID_X_STEPS) {
+  addGridLine([x, -GRID_Y_EXTENT], [x, GRID_Y_EXTENT], x === 0);
+}
+for (const y of GRID_Y_STEPS) {
+  addGridLine([-GRID_X_EXTENT, y], [GRID_X_EXTENT, y], y === 0);
+}
+
+// Axis labels
+const xLab = el('text', {
+  x: PAD_L + plotW - 4, y: cy + 18, 'text-anchor': 'end', class: 'axis-label'
+});
+xLab.textContent = 'x';
+svg.appendChild(xLab);
+const yLab = el('text', {
+  x: cx - 10, y: PAD_T + 4, 'text-anchor': 'end', class: 'axis-label'
+});
+yLab.textContent = 'y';
+svg.appendChild(yLab);
+
+// Scatter points
+const pointsGroup = el('g');
+svg.appendChild(pointsGroup);
+const pointEls = [];
+for (let i = 0; i < N; i++) {
+  const [px, py] = dataToPx(points[i][0], points[i][1]);
+  const c = el('circle', { cx: px, cy: py, r: 3, class: 'point' });
+  pointsGroup.appendChild(c);
+  pointEls.push(c);
+}
+
+// Basis vectors (drawn after points so they're on top)
+const REF = 1.0;
+const vecI = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'vec-i', 'marker-end': 'url(#arrowI)',
+});
+const vecJ = el('line', {
+  x1: cx, y1: cy, x2: cx, y2: cy,
+  class: 'vec-j', 'marker-end': 'url(#arrowJ)',
+});
+svg.appendChild(vecI);
+svg.appendChild(vecJ);
+
+const iLabel = el('text', { class: 'vec-label-i' });
+iLabel.textContent = 'î';
+const jLabel = el('text', { class: 'vec-label-j' });
+jLabel.textContent = 'ĵ';
+svg.appendChild(iLabel);
+svg.appendChild(jLabel);
+
+// ---------------------------------------------------------------------------
+// Matrix display (top-right inset, like covariance_transform's source-data inset)
+// ---------------------------------------------------------------------------
+const MX = 530, MY = 28, MW = 170, MH = 110;
+let matAEl, matBEl, matC1El, matC2El;
+(function drawMatrix() {
+  const g = el('g');
+  svg.appendChild(g);
+  g.appendChild(el('rect', {
+    x: MX, y: MY, width: MW, height: MH, rx: 6, class: 'matrix-bg'
+  }));
+
+  // Square brackets
+  const bx1 = MX + 22, bx2 = MX + MW - 22;
+  const by1 = MY + 18, by2 = MY + MH - 28;
+  const bw = 6;
+  g.appendChild(el('path', {
+    d: `M ${bx1 + bw} ${by1} L ${bx1} ${by1} L ${bx1} ${by2} L ${bx1 + bw} ${by2}`,
+    class: 'matrix-bracket'
+  }));
+  g.appendChild(el('path', {
+    d: `M ${bx2 - bw} ${by1} L ${bx2} ${by1} L ${bx2} ${by2} L ${bx2 - bw} ${by2}`,
+    class: 'matrix-bracket'
+  }));
+
+  const colX1 = MX + MW * 0.35;
+  const colX2 = MX + MW * 0.65;
+  const rowY1 = MY + MH * 0.34;
+  const rowY2 = MY + MH * 0.62;
+
+  matAEl = el('text', {
+    x: colX1, y: rowY1, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    class: 'matrix-entry matrix-entry-a'
+  });
+  matAEl.textContent = '1.0';
+  g.appendChild(matAEl);
+
+  matC1El = el('text', {
+    x: colX2, y: rowY1, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    class: 'matrix-entry matrix-entry-c'
+  });
+  matC1El.textContent = '0.0';
+  g.appendChild(matC1El);
+
+  matC2El = el('text', {
+    x: colX1, y: rowY2, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    class: 'matrix-entry matrix-entry-c'
+  });
+  matC2El.textContent = '0.0';
+  g.appendChild(matC2El);
+
+  matBEl = el('text', {
+    x: colX2, y: rowY2, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    class: 'matrix-entry matrix-entry-b'
+  });
+  matBEl.textContent = '1.0';
+  g.appendChild(matBEl);
+
+  const cap = el('text', {
+    x: MX + MW / 2, y: MY + MH - 8, 'text-anchor': 'middle', class: 'matrix-caption'
+  });
+  cap.textContent = 'matrix A';
+  g.appendChild(cap);
+})();
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+const phases = [
+  { name: 'hold_init',   dur: 600 },
+  { name: 'a_up',        dur: 1000 },
+  { name: 'a_peak',      dur: 300 },
+  { name: 'a_down',      dur: 1000 },
+  { name: 'hold_mid_1',  dur: 400 },
+  { name: 'b_up',        dur: 1000 },
+  { name: 'b_peak',      dur: 300 },
+  { name: 'b_down',      dur: 1000 },
+  { name: 'hold_mid_2',  dur: 400 },
+  { name: 'c_up',        dur: 1000 },
+  { name: 'c_peak',      dur: 300 },
+  { name: 'c_down',      dur: 1000 },
+  { name: 'hold_end',    dur: 600 },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+const A_MAX = 3.0;
+const B_MAX = 3.0;
+const C_MAX = 0.7;
+
+function getMatrix(t) {
+  let acc = 0;
+  for (const p of phases) {
+    if (t < acc + p.dur) {
+      const local = (t - acc) / p.dur;
+      const e = easeInOut(local);
+      switch (p.name) {
+        case 'hold_init':  return [1, 1, 0];
+        case 'a_up':       return [lerp(1, A_MAX, e), 1, 0];
+        case 'a_peak':     return [A_MAX, 1, 0];
+        case 'a_down':     return [lerp(A_MAX, 1, e), 1, 0];
+        case 'hold_mid_1': return [1, 1, 0];
+        case 'b_up':       return [1, lerp(1, B_MAX, e), 0];
+        case 'b_peak':     return [1, B_MAX, 0];
+        case 'b_down':     return [1, lerp(B_MAX, 1, e), 0];
+        case 'hold_mid_2': return [1, 1, 0];
+        case 'c_up':       return [1, 1, lerp(0, C_MAX, e)];
+        case 'c_peak':     return [1, 1, C_MAX];
+        case 'c_down':     return [1, 1, lerp(C_MAX, 0, e)];
+        case 'hold_end':   return [1, 1, 0];
+      }
+    }
+    acc += p.dur;
+  }
+  return [1, 1, 0];
+}
+
+function applyFrame(t) {
+  const [a, b, c] = getMatrix(t);
+  matAEl.textContent = a.toFixed(1);
+  matBEl.textContent = b.toFixed(1);
+  matC1El.textContent = c.toFixed(1);
+  matC2El.textContent = c.toFixed(1);
+
+  // Apply [[a, c], [c, b]] to a 2D point
+  function transform(x, y) {
+    return [a * x + c * y, c * x + b * y];
+  }
+
+  // Points (grid stays static, see comment near grid construction)
+  for (let i = 0; i < N; i++) {
+    const [x, y] = transform(points[i][0], points[i][1]);
+    const [px, py] = dataToPx(x, y);
+    pointEls[i].setAttribute('cx', px);
+    pointEls[i].setAttribute('cy', py);
+  }
+
+  // Basis vectors
+  const [iTip0, iTip1] = transform(REF, 0);
+  const [jTip0, jTip1] = transform(0, REF);
+  const [iTipX, iTipY] = dataToPx(iTip0, iTip1);
+  const [jTipX, jTipY] = dataToPx(jTip0, jTip1);
+  vecI.setAttribute('x2', iTipX);
+  vecI.setAttribute('y2', iTipY);
+  vecJ.setAttribute('x2', jTipX);
+  vecJ.setAttribute('y2', jTipY);
+  iLabel.setAttribute('x', iTipX + 10);
+  iLabel.setAttribute('y', iTipY + 4);
+  jLabel.setAttribute('x', jTipX + 8);
+  jLabel.setAttribute('y', jTipY - 8);
+}
+
+// Clock (matches the pattern used by other animations in this folder)
+let startTime = null;
+window.__virtualTimeMs = null;
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+
+function frame(now) {
+  if (window.__virtualTimeMs !== null) {
+    renderAt(window.__virtualTimeMs);
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (startTime === null) startTime = now;
+  applyFrame((now - startTime) % totalDur);
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('restart').addEventListener('click', () => {
+  startTime = null;
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

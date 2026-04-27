@@ -4,6 +4,7 @@ title: "AI Logs"
 theme: "PaperMod"
 googleAnalytics: G-RGHWYFE1WN
 enableEmoji: true
+capitalizeListTitles: false
 privacy:
   googleAnalytics:
     anonymizeIP: true
@@ -11,6 +12,18 @@ privacy:
     respectDoNotTrack: true
     useSessionStorage: false
 copyright: © 2025 [Raghava Dhanya](https://ragv.in) · [License](/license)
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block:
+            - ['\[', '\]']
+            - ['$$', '$$']
+          inline:
+            - ['\(', '\)']
+            - ['$', '$']
 params:
   # cover:
   #   hidden: false
