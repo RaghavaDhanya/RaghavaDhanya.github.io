@@ -16,19 +16,23 @@ Long trades are buying a [security](https://en.wikipedia.org/wiki/Security_(fina
 ### Pair Trading
 The idea of [pair trading](https://en.wikipedia.org/wiki/Pairs_trade) is to find matching securities that behave similarly and trade when they diverge on the basis that they'll eventually revert and come back together.
 
-Let's take a toy example of two stocks `A` and `B`
-![Example of two stocks which are mostly same but for small amount of time they diverge](/images/high-velocity-trading-ml-systems/pair-example.png)
+Let's take an example, Coca-Cola and PepsiCo. They sell competing products to roughly the similar customers, source similar raw materials, and probably react to the similar broad shifts in consumer spending behavior. Let's say sugar prices spike, both stocks probably will dip. When summer demand picks up, both rise. Once in a while something specific to one of them (a recall, a missed earnings call, a new product launch) pulls them apart, but the gap is usually temporary because the underlying businesses still face the fundamental forces.
+
+This is an illustrative example, not an actual claim about these stocks. Both companies are far more than soda makers (snacks, bottled water, and other lines), so the real relationship is messier than this idealized version. This is just trying to provide an intuition.
+
+Let's take a toy example of two stocks `A` and `B`.
+![Example of two stocks which are mostly same but for small amount of time they diverge](/images/high-velocity-trading-ml-systems/pair-example.gif)
 
 Once you have a good pair security and detect a divergence then the simple strategy is to short the security that is up, long the one that is down. 
 ### How does it work?
 Let's say securities `A` and `B` diverge like this
-![A graph of showing A going up and B going down](/images/high-velocity-trading-ml-systems/pair-diverge.png)
+![A graph of showing A going up and B going down](/images/high-velocity-trading-ml-systems/pair-diverge.gif)
 So you short `A` and long `B`.
 
 Let's see how revert can happen after a pair diverges.
-1. `A` might be misbehaving, and `A` comes back down. ![Same graph as before with A coming down to meet B](/images/high-velocity-trading-ml-systems/pair-revert-1.png) In this case, since you shorted `A`, you end up making profit when it goes down and there is little change in `B` so no loss there. So, in total you are in profit.
-2. `B` might be misbehaving, and `B` comes back up ![Same graph as before with B coming up to meet A](/images/high-velocity-trading-ml-systems/pair-revert-2.png) In this case, since you longed `B`, you end up making profit when `B` goes up. And there is little change in `A` so no loss there. So, in total you are in profit.
-3. Both might be misbehaving, and they meet in the middle ![Same graph as before with B coming up to meet A](/images/high-velocity-trading-ml-systems/pair-revert-3.png) In this case, you make some profit on `A` when it goes down due to short and make profit again on `B` when it goes up. Again, in total you are in profit.
+1. `A` might be misbehaving, and `A` comes back down. ![Same graph as before with A coming down to meet B](/images/high-velocity-trading-ml-systems/pair-revert-1.gif) In this case, since you shorted `A`, you end up making profit when it goes down and there is little change in `B` so no loss there. So, in total you are in profit.
+2. `B` might be misbehaving, and `B` comes back up ![Same graph as before with B coming up to meet A](/images/high-velocity-trading-ml-systems/pair-revert-2.gif) In this case, since you longed `B`, you end up making profit when `B` goes up. And there is little change in `A` so no loss there. So, in total you are in profit.
+3. Both might be misbehaving, and they meet in the middle ![Same graph as before with B coming up to meet A](/images/high-velocity-trading-ml-systems/pair-revert-3.gif) In this case, you make some profit on `A` when it goes down due to short and make profit again on `B` when it goes up. Again, in total you are in profit.
 
 These are ideal cases. Most of the time you get a mixture of these, but if the securities are indeed a pair and you detected divergence correctly and within time, you'll always make profit in an ideal world.
 ### A pair

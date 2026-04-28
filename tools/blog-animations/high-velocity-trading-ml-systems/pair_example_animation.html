@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pair example — divergence highlight</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+    --series-a: #4cb6c0;
+    --series-b: #e25849;
+    --highlight: #2c4a8a;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .stage {
+    width: 720px;
+    height: 540px;
+    position: relative;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .axis-line { stroke: var(--secondary); stroke-width: 1; fill: none; }
+  .axis-label { fill: var(--secondary); font-size: 13px; }
+  .series { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+  .series.a { stroke: var(--series-a); }
+  .series.b { stroke: var(--series-b); }
+  .legend-text { fill: var(--primary); font-size: 14px; }
+  .legend-swatch-a { fill: var(--series-a); }
+  .legend-swatch-b { fill: var(--series-b); }
+  .div-circle { stroke: var(--highlight); stroke-width: 1.8; fill: none; }
+  .div-arrow { stroke: var(--highlight); stroke-width: 1.6; fill: none; }
+  .div-arrow-head { fill: var(--highlight); }
+  .div-text {
+    fill: var(--highlight);
+    font-size: 14px;
+    font-weight: 500;
+    font-style: italic;
+  }
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 12px;
+    color: var(--secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .phase {
+    font-size: 11px;
+    color: var(--tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="controls">
+  <button id="restart">Restart</button>
+  <span class="phase" id="phaseLabel"></span>
+</div>
+
+<script>
+const W = 720, H = 540;
+const PAD_L = 70, PAD_R = 50, PAD_T = 80, PAD_B = 60;
+const plotW = W - PAD_L - PAD_R;
+const plotH = H - PAD_T - PAD_B;
+
+const Y_MIN = 50, Y_MAX = 210;
+function yToPx(y) {
+  return PAD_T + plotH * (1 - (y - Y_MIN) / (Y_MAX - Y_MIN));
+}
+function tToPx(t) {  // t in 0..1
+  return PAD_L + t * plotW;
+}
+
+// ---------------------------------------------------------------------------
+// Data: two correlated series with a divergence window in the middle
+// ---------------------------------------------------------------------------
+const N_POINTS = 240;
+const series = [];
+for (let i = 0; i < N_POINTS; i++) {
+  const x = i / (N_POINTS - 1);
+  const base = 155
+    + 14 * Math.sin(x * 6.5 + 0.3)
+    + 10 * Math.sin(x * 4.1 + 1.2)
+    +  6 * Math.sin(x * 11.3 + 0.7);
+  let a = base + 3 * Math.sin(x * 27 + 2.1);
+  let b = base + 3 * Math.sin(x * 27 + 0.4);
+  // Divergence window: B drops, A holds higher
+  const winStart = 0.42, winEnd = 0.74;
+  if (x > winStart && x < winEnd) {
+    const tw = (x - winStart) / (winEnd - winStart);
+    const env = Math.sin(tw * Math.PI);  // 0..1..0
+    a += 6 * env;
+    b -= 36 * env;
+  }
+  series.push({ t: x, a, b });
+}
+
+const DIV_CENTER_T = 0.58;       // where to put the highlight circle
+const DIV_RX = plotW * 0.10;
+const DIV_RY = plotH * 0.32;
+
+// ---------------------------------------------------------------------------
+// SVG setup
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Legend at the top
+const legend = el('g');
+svg.appendChild(legend);
+const legendY = 36;
+const legendCx = W / 2;
+legend.appendChild(el('rect', {
+  x: legendCx - 70, y: legendY - 10, width: 12, height: 12,
+  class: 'legend-swatch-a', rx: 2,
+}));
+const legA = el('text', { x: legendCx - 52, y: legendY, class: 'legend-text' });
+legA.textContent = 'A';
+legend.appendChild(legA);
+legend.appendChild(el('rect', {
+  x: legendCx + 6, y: legendY - 10, width: 12, height: 12,
+  class: 'legend-swatch-b', rx: 2,
+}));
+const legB = el('text', { x: legendCx + 24, y: legendY, class: 'legend-text' });
+legB.textContent = 'B';
+legend.appendChild(legB);
+
+// Y-axis labels (no spine, just numbers like the original)
+const yTicks = [50, 100, 150, 200];
+yTicks.forEach(v => {
+  const t = el('text', {
+    x: PAD_L - 14, y: yToPx(v) + 4, 'text-anchor': 'end', class: 'axis-label',
+  });
+  t.textContent = String(v);
+  svg.appendChild(t);
+});
+
+// Build path strings
+function buildPath(key) {
+  let d = '';
+  for (let i = 0; i < series.length; i++) {
+    const px = tToPx(series[i].t);
+    const py = yToPx(series[i][key]);
+    d += (i === 0 ? 'M' : 'L') + px.toFixed(2) + ' ' + py.toFixed(2) + ' ';
+  }
+  return d;
+}
+const pathA_d = buildPath('a');
+const pathB_d = buildPath('b');
+
+// Clip rect for the reveal sweep
+const defs = el('defs');
+svg.appendChild(defs);
+const clip = el('clipPath', { id: 'revealClip' });
+const clipRect = el('rect', {
+  x: PAD_L, y: 0, width: 0, height: H,
+});
+clip.appendChild(clipRect);
+defs.appendChild(clip);
+
+const seriesGroup = el('g', { 'clip-path': 'url(#revealClip)' });
+svg.appendChild(seriesGroup);
+
+const pathA = el('path', { d: pathA_d, class: 'series a' });
+const pathB = el('path', { d: pathB_d, class: 'series b' });
+seriesGroup.appendChild(pathA);
+seriesGroup.appendChild(pathB);
+
+// Highlight circle + arrow + text
+const highlight = el('g', { opacity: 0 });
+svg.appendChild(highlight);
+const divCx = tToPx(DIV_CENTER_T);
+// Circle vertical center sits between the two lines at the divergence center.
+// Find approximate y at DIV_CENTER_T
+const idxC = Math.round(DIV_CENTER_T * (N_POINTS - 1));
+const yMid = (series[idxC].a + series[idxC].b) / 2;
+const divCy = yToPx(yMid);
+highlight.appendChild(el('ellipse', {
+  cx: divCx, cy: divCy, rx: DIV_RX, ry: DIV_RY, class: 'div-circle',
+}));
+// Arrow pointing up to the lower-left of the circle
+const arrowEndX = divCx - DIV_RX * 0.78;
+const arrowEndY = divCy + DIV_RY * 0.66;
+const arrowStartX = arrowEndX - 60;
+const arrowStartY = arrowEndY + 36;
+highlight.appendChild(el('path', {
+  d: `M${arrowStartX} ${arrowStartY} Q ${arrowStartX + 12} ${arrowStartY - 4} ${arrowEndX} ${arrowEndY}`,
+  class: 'div-arrow',
+}));
+// Arrow head
+const ah = 7;
+const dx = arrowEndX - (arrowStartX + 12);
+const dy = arrowEndY - (arrowStartY - 4);
+const len = Math.hypot(dx, dy) || 1;
+const ux = dx / len, uy = dy / len;
+const px1 = arrowEndX - ux * ah - uy * (ah * 0.55);
+const py1 = arrowEndY - uy * ah + ux * (ah * 0.55);
+const px2 = arrowEndX - ux * ah + uy * (ah * 0.55);
+const py2 = arrowEndY - uy * ah - ux * (ah * 0.55);
+highlight.appendChild(el('polygon', {
+  points: `${arrowEndX},${arrowEndY} ${px1},${py1} ${px2},${py2}`,
+  class: 'div-arrow-head',
+}));
+// Text below the arrow
+const divText = el('text', {
+  x: arrowStartX - 10, y: arrowStartY + 18,
+  'text-anchor': 'start', class: 'div-text',
+});
+divText.textContent = 'Diverging more than usual';
+highlight.appendChild(divText);
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+const phases = [
+  { name: 'reveal',     dur: 2800 },
+  { name: 'highlight',  dur: 1400 },
+  { name: 'hold',       dur: 2200 },
+  { name: 'fadeout',    dur: 600  },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+const phaseLabel = document.getElementById('phaseLabel');
+
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+function applyFrame(t) {
+  let acc = 0;
+  let cur = phases[0];
+  let local = 0;
+  for (const p of phases) {
+    if (t < acc + p.dur) { cur = p; local = (t - acc) / p.dur; break; }
+    acc += p.dur;
+  }
+  phaseLabel.textContent = cur.name;
+
+  let revealAmt = 0;
+  let highlightOpacity = 0;
+  let lineOpacity = 1;
+
+  const order = phases.map(p => p.name);
+  const idx = order.indexOf(cur.name);
+
+  if (idx >= order.indexOf('reveal')) {
+    revealAmt = idx === order.indexOf('reveal') ? easeInOut(local) : 1;
+  }
+  if (idx >= order.indexOf('highlight')) {
+    highlightOpacity = idx === order.indexOf('highlight') ? easeInOut(local) : 1;
+  }
+  if (idx >= order.indexOf('fadeout')) {
+    const f = easeInOut(local);
+    highlightOpacity = 1 - f;
+    lineOpacity = 1 - f * 0.92;
+  }
+
+  clipRect.setAttribute('width', plotW * revealAmt);
+  highlight.setAttribute('opacity', highlightOpacity);
+  pathA.setAttribute('opacity', lineOpacity);
+  pathB.setAttribute('opacity', lineOpacity);
+}
+
+let startTime = null;
+window.__virtualTimeMs = null;
+
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+
+function frame(now) {
+  if (window.__virtualTimeMs !== null) {
+    renderAt(window.__virtualTimeMs);
+    requestAnimationFrame(frame);
+    return;
+  }
+  if (startTime === null) startTime = now;
+  applyFrame((now - startTime) % totalDur);
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('restart').addEventListener('click', () => {
+  startTime = null;
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

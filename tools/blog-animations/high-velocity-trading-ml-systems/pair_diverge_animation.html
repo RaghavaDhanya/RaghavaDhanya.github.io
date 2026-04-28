@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pair diverge</title>
+<style>
+  :root {
+    --primary: #1e1e1e;
+    --secondary: #6c6c6c;
+    --tertiary: #d6d6d6;
+    --border: #eeeeee;
+    --bg: #ffffff;
+    --series-a: #4cb6c0;
+    --series-b: #e25849;
+    --signal: #6c6c6c;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                 Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .stage { width: 720px; height: 540px; position: relative; overflow: hidden; }
+  svg { width: 100%; height: 100%; display: block; }
+  .series { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .series.a { stroke: var(--series-a); }
+  .series.b { stroke: var(--series-b); }
+  .vertex.a { fill: var(--series-a); }
+  .vertex.b { fill: var(--series-b); }
+  .legend-text { fill: var(--primary); font-size: 16px; }
+  .legend-swatch-a { fill: var(--series-a); }
+  .legend-swatch-b { fill: var(--series-b); }
+  .signal-text { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; fill: var(--signal); }
+  .controls {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .controls button {
+    font: inherit; font-size: 12px; color: var(--secondary);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  }
+  .phase { font-size: 11px; color: var(--tertiary); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+<div class="controls">
+  <button id="restart">Restart</button>
+  <span class="phase" id="phaseLabel"></span>
+</div>
+<script>
+// ---------------------------------------------------------------------------
+// Geometry: tracking portion is wiggly; diverge portion is a clean V
+// ---------------------------------------------------------------------------
+const W = 720, H = 540;
+const Y_A = 274, Y_B = 286;
+const X_START = -40;          // off-canvas — line "enters" from the left
+const X_KINK  = 380;
+const X_END   = 680;
+const Y_A_END = 140;
+const Y_B_END = 420;
+
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rand) {
+  const u = 1 - rand();
+  const v = rand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function smoothstep(a, b, x) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+// Build the shared wiggle pattern + tiny per-series noise. A and B follow the
+// same wave (correlated) so they look like a real pair.
+const rand = mulberry32(7);
+const N_WIGGLE = 60;
+const WIGGLE_AMP = 6;
+const wiggleA = [];
+const wiggleB = [];
+for (let i = 0; i < N_WIGGLE; i++) {
+  const x = X_START + (X_KINK - X_START) * (i / (N_WIGGLE - 1));
+  const t = i / (N_WIGGLE - 1);
+  // Fade the wiggle to zero near the kink so the lines settle smoothly into
+  // their straight diverge segments.
+  const fade = 1 - smoothstep(0.85, 1.0, t);
+  const wave = fade * WIGGLE_AMP * (
+    Math.sin(t * Math.PI * 4.0) * 0.55 +
+    Math.sin(t * Math.PI * 7.3 + 1.2) * 0.30 +
+    Math.sin(t * Math.PI * 11.1 + 2.5) * 0.18
+  );
+  const noiseA = fade * 0.7 * gauss(rand);
+  const noiseB = fade * 0.7 * gauss(rand);
+  wiggleA.push([x, Y_A + wave + noiseA]);
+  wiggleB.push([x, Y_B + wave + noiseB]);
+}
+// Append the diverge endpoint
+const pathA = [...wiggleA, [X_END, Y_A_END]];
+const pathB = [...wiggleB, [X_END, Y_B_END]];
+const KINK_IDX = N_WIGGLE - 1;  // index of the kink point in path arrays
+
+// Pre-compute segment-1 length (off-canvas start → kink) vs segment-2 length
+// (kink → end), so the reveal animation can hand each phase its own beat.
+function arcLength(points, fromIdx, toIdx) {
+  let len = 0;
+  for (let i = fromIdx + 1; i <= toIdx; i++) {
+    len += Math.hypot(points[i][0] - points[i-1][0], points[i][1] - points[i-1][1]);
+  }
+  return len;
+}
+const lenAFull   = arcLength(pathA, 0, pathA.length - 1);
+const lenATrack  = arcLength(pathA, 0, KINK_IDX);
+const lenBFull   = arcLength(pathB, 0, pathB.length - 1);
+const lenBTrack  = arcLength(pathB, 0, KINK_IDX);
+const fracATrack = lenATrack / lenAFull;
+const fracBTrack = lenBTrack / lenBFull;
+
+// Label positions (above A's tip, below B's tip)
+const A_LABEL = [535, 105];
+const B_LABEL = [535, 470];
+
+// ---------------------------------------------------------------------------
+// SVG setup
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('plot');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Legend
+const legend = el('g');
+svg.appendChild(legend);
+const legendY = 50, legendCx = W / 2;
+legend.appendChild(el('rect', {
+  x: legendCx - 70, y: legendY - 12, width: 14, height: 14, class: 'legend-swatch-a', rx: 2,
+}));
+const legA = el('text', { x: legendCx - 50, y: legendY, class: 'legend-text' });
+legA.textContent = 'A';
+legend.appendChild(legA);
+legend.appendChild(el('rect', {
+  x: legendCx + 6, y: legendY - 12, width: 14, height: 14, class: 'legend-swatch-b', rx: 2,
+}));
+const legB = el('text', { x: legendCx + 26, y: legendY, class: 'legend-text' });
+legB.textContent = 'B';
+legend.appendChild(legB);
+
+function pathD(points) {
+  return points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+}
+const pa = el('path', { d: pathD(pathA), class: 'series a', 'pathLength': 1 });
+const pb = el('path', { d: pathD(pathB), class: 'series b', 'pathLength': 1 });
+svg.appendChild(pa);
+svg.appendChild(pb);
+
+// End dots only — no start dots, so the lines visually come "from off-screen"
+const aEndDot = el('circle', { cx: pathA.at(-1)[0], cy: pathA.at(-1)[1], r: 5, class: 'vertex a', opacity: 0 });
+const bEndDot = el('circle', { cx: pathB.at(-1)[0], cy: pathB.at(-1)[1], r: 5, class: 'vertex b', opacity: 0 });
+svg.appendChild(aEndDot);
+svg.appendChild(bEndDot);
+
+// Trade signals
+const aSignal = el('text', { x: A_LABEL[0], y: A_LABEL[1], class: 'signal-text', opacity: 0 });
+aSignal.textContent = '▼ SHORT A';
+const bSignal = el('text', { x: B_LABEL[0], y: B_LABEL[1], class: 'signal-text', opacity: 0 });
+bSignal.textContent = '▲ LONG B';
+svg.appendChild(aSignal);
+svg.appendChild(bSignal);
+
+// ---------------------------------------------------------------------------
+// Animation
+// ---------------------------------------------------------------------------
+const phases = [
+  { name: 'idle',     dur: 300  },
+  { name: 'together', dur: 1500 },
+  { name: 'diverge',  dur: 1500 },
+  { name: 'signal',   dur: 700  },
+  { name: 'hold',     dur: 1700 },
+];
+const totalDur = phases.reduce((s, p) => s + p.dur, 0);
+const phaseLabel = document.getElementById('phaseLabel');
+
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+function setReveal(path, frac) {
+  // pathLength=1, dashoffset=1 hides everything, dashoffset=0 reveals full
+  path.setAttribute('stroke-dasharray', '1 1');
+  path.setAttribute('stroke-dashoffset', String(1 - frac));
+}
+
+function applyFrame(t) {
+  let acc = 0;
+  let cur = phases[0];
+  let local = 0;
+  for (const p of phases) {
+    if (t < acc + p.dur) { cur = p; local = (t - acc) / p.dur; break; }
+    acc += p.dur;
+  }
+  phaseLabel.textContent = cur.name;
+
+  let trackProg = 0;   // 0..1, how much of the wiggle/tracking segment is revealed
+  let divProg = 0;     // 0..1, how much of the diverge segment is revealed
+  let signalOpacity = 0;
+  if (cur.name === 'idle') {}
+  else if (cur.name === 'together') { trackProg = easeInOut(local); }
+  else if (cur.name === 'diverge')  { trackProg = 1; divProg = easeInOut(local); }
+  else if (cur.name === 'signal')   { trackProg = 1; divProg = 1; signalOpacity = easeInOut(local); }
+  else                              { trackProg = 1; divProg = 1; signalOpacity = 1; }
+
+  const fracA = fracATrack * trackProg + (1 - fracATrack) * divProg;
+  const fracB = fracBTrack * trackProg + (1 - fracBTrack) * divProg;
+  setReveal(pa, fracA);
+  setReveal(pb, fracB);
+  aEndDot.setAttribute('opacity', divProg >= 0.985 ? 1 : 0);
+  bEndDot.setAttribute('opacity', divProg >= 0.985 ? 1 : 0);
+  aSignal.setAttribute('opacity', signalOpacity);
+  bSignal.setAttribute('opacity', signalOpacity);
+}
+
+let startTime = null;
+window.__virtualTimeMs = null;
+function renderAt(elapsed) {
+  const t = ((elapsed % totalDur) + totalDur) % totalDur;
+  applyFrame(t);
+}
+window.renderAt = renderAt;
+function frame(now) {
+  if (window.__virtualTimeMs !== null) { renderAt(window.__virtualTimeMs); requestAnimationFrame(frame); return; }
+  if (startTime === null) startTime = now;
+  applyFrame((now - startTime) % totalDur);
+  requestAnimationFrame(frame);
+}
+document.getElementById('restart').addEventListener('click', () => { startTime = null; });
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
