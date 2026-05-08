@@ -60,6 +60,11 @@
   <span class="phase" id="phaseLabel"></span>
 </div>
 <script>
+window.__palette = {
+  bg: "#ffffff",
+  fg: ["#1e1e1e", "#6c6c6c", "#bcbcbc", "#d6d6d6", "#eeeeee", "#1f9c3f", "#4cb6c0", "#e25849"],
+};
+
 // Variant via URL hash: #1, #2, #3
 const variant = (location.hash || '#1').slice(1) || '1';
 

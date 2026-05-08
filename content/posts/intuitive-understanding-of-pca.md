@@ -6,7 +6,7 @@ tags: ["pca", "linear-algebra", "ml", "ai", "dimensionality-reduction"]
 categories:
     - intuitions
 cover:
-    image: /images/intuitive-understanding-of-pca/cover.png
+    image: images/intuitive-understanding-of-pca/cover.webp
     caption: "Principal directions of a tilted Gaussian"
     alt: "Scatter cloud in a tilted Gaussian shape, with two arrows through the centroid: a longer sage-green arrow along the principal direction and a shorter amber arrow perpendicular to it"
 ---
@@ -34,7 +34,7 @@ But "what's shared" isn't always a single number you can subtract.
 
 Let's take people's heights plotted against their weights. You don't get a random splatter. Taller people tend to weigh more, so the points line up into a diagonal cloud.
 
-![GIF: height-vs-weight scatter, draw a line along the cloud's highest variation, draw a second line perpendicular to it, rotate the plot so that the two lines become the new axes](/images/intuitive-understanding-of-pca/height_weight_pca.gif)
+![GIF: height-vs-weight scatter, draw a line along the cloud's highest variation, draw a second line perpendicular to it, rotate the plot so that the two lines become the new axes](/images/intuitive-understanding-of-pca/height_weight_pca.webp)
 
 Both columns vary here. There's no single thing we can subtract to leave just the informative part. But if we change to new axes that match the shape of the cloud (one along the direction of maximum variation, one perpendicular to it) and rotate the plot so those new axes become our coordinate system, something interesting happens.
 
@@ -58,7 +58,7 @@ If the data only had one column, we would be done. But look at height/weight aga
 
 What we need is a way to say: tall people tend to be heavy, so the cloud slants up. That's **correlation**.
 
-![Animated scatter plot morphing from a tight diagonal cloud (r ≈ +0.95) through flat (r ≈ 0) to an anti-diagonal (r ≈ −0.95), then expanding into a round blob (r ≈ 0). A live readout shows r and cov updating with the shape.](/images/intuitive-understanding-of-pca/correlation_morph.gif)
+![Animated scatter plot morphing from a tight diagonal cloud (r ≈ +0.95) through flat (r ≈ 0) to an anti-diagonal (r ≈ −0.95), then expanding into a round blob (r ≈ 0). A live readout shows r and cov updating with the shape.](/images/intuitive-understanding-of-pca/correlation_morph.webp)
 
 Correlation between two columns is a single number between $-1$ and $+1$. At $+1$, the points follow a line going up. At $-1$, they follow a line going down. At $0$, the cloud has no slope, knowing one column tells you nothing about the other. Height and weight are positively correlated. Altitude and air pressure are negatively correlated. Two unrelated measurements land near zero. In one number, correlation captures the shape of the relationship.
 
@@ -104,13 +104,13 @@ $$
 
 The diagonal entries ($a$ and $b$) scale each axis on its own. The off-diagonal entry ($c$) mixes the two axes together.
 
-![Animation: a 2x2 symmetric matrix shown next to a circular cluster of points. First the top-left entry $a$ slides from 1 up to 3 and back, stretching the cluster horizontally. Then the bottom-right entry $b$ slides from 1 up to 3 and back, stretching it vertically. Then the off-diagonal entry $c$ slides from 0 up to 0.7 and back, and the cluster stretches along the (1,1) diagonal direction. Matrix values update live as they change.](/images/intuitive-understanding-of-pca/scaling_matrix.gif)
+![Animation: a 2x2 symmetric matrix shown next to a circular cluster of points. First the top-left entry $a$ slides from 1 up to 3 and back, stretching the cluster horizontally. Then the bottom-right entry $b$ slides from 1 up to 3 and back, stretching it vertically. Then the off-diagonal entry $c$ slides from 0 up to 0.7 and back, and the cluster stretches along the (1,1) diagonal direction. Matrix values update live as they change.](/images/intuitive-understanding-of-pca/scaling_matrix.webp)
 
 When $a$ or $b$ goes up, the cluster just stretches along that axis. But when $c$ goes up, $x$ and $y$ get mixed, and the cluster stretches along the diagonal direction $(1, 1)$.
 
 If you look at the **covariance matrix**, it looks very similar to our diagonal scaling matrix i.e., high covariance entries are exactly in the place to expand points in the covariance direction. **It pulls points hard in the directions where the data varies the most, and barely nudges them in directions where the data doesn't vary.**
 
-![Animated scatter of the same height/weight cloud being transformed by its own covariance matrix: points move to their new positions, and the cloud elongates along its principal diagonal while compressing perpendicular to it.](/images/intuitive-understanding-of-pca/covariance_transform.gif)
+![Animated scatter of the same height/weight cloud being transformed by its own covariance matrix: points move to their new positions, and the cloud elongates along its principal diagonal while compressing perpendicular to it.](/images/intuitive-understanding-of-pca/covariance_transform.webp)
 
 You can see the effect point by point. A point sitting along the cloud's diagonal the direction the data spreads in, gets pushed further along that same diagonal. A point sitting perpendicular to the cloud barely budges, or gets squished toward zero. Points in between get rotated toward the diagonal *and* stretched along it. Watching the whole scatter at once, the picture elongates along the principal slant and thins out the other way.
 
@@ -128,7 +128,7 @@ If we pick those direction-keeping vectors as our axes, the matrix's pull doesn'
 
 These direction-keeping vectors are the **eigenvectors** of the matrix. Every symmetric matrix has its own set. For our covariance matrix, those eigenvectors are exactly the lines we drew in the very first animation, the directions of variance in our data.
 
-![Animated fan of dotted rays radiating from the origin. The covariance matrix is applied; most rays tilt off their original line, but two pairs of rays (the eigenvector directions) stay colinear with their starting position — one pair stretches (bigger gaps between dots), the other compresses (smaller gaps). The eigenvector rays color green as the transformation completes.](/images/intuitive-understanding-of-pca/eigenvectors.gif)
+![Animated fan of dotted rays radiating from the origin. The covariance matrix is applied; most rays tilt off their original line, but two pairs of rays (the eigenvector directions) stay colinear with their starting position — one pair stretches (bigger gaps between dots), the other compresses (smaller gaps). The eigenvector rays color green as the transformation completes.](/images/intuitive-understanding-of-pca/eigenvectors.webp)
 
 Every direction in the animation's fan gets pulled somewhere when we apply the matrix. Most of them rotate, the dots along those rays drift off their starting line. But a couple of rays' dots stay on the line they started on. The only thing that changes for those special directions is the *spacing* between dots. Either stretched or shrunk. Those are the eigenvectors of the covariance matrix, and the scale factor applied to their spacing (how much they got stretched or shrunk) is the **eigenvalue**.[^nonneg]
 
@@ -148,7 +148,7 @@ Ranking eigenvectors by their eigenvalues gives us exactly the coordinate system
 
 ## Putting it all together
 
-![Animated height/weight scatter with the PC1 eigenvector drawn as a green diagonal line. Each point grows a dashed perpendicular drop line and slides onto PC1. The original axes fade out, and the scene rotates so PC1 becomes horizontal, leaving a 1D strip of dots.](/images/intuitive-understanding-of-pca/projection.gif)
+![Animated height/weight scatter with the PC1 eigenvector drawn as a green diagonal line. Each point grows a dashed perpendicular drop line and slides onto PC1. The original axes fade out, and the scene rotates so PC1 becomes horizontal, leaving a 1D strip of dots.](/images/intuitive-understanding-of-pca/projection.webp)
 
 So take the first $k$ eigenvectors (the principal components) and use them as a transformation matrix on your data. Let $V_k$ be the matrix with those first $k$ eigenvectors as its columns:
 

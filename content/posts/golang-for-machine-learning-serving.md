@@ -6,7 +6,7 @@ categories:
     - projects
     - glance-inmobi
 cover:
-    image: /images/golang-for-machine-learning-serving/go_mab_wide.png
+    image: images/golang-for-machine-learning-serving/cover.webp
     caption: "Multi Armed Bandit in Golang"
     alt: Golang's Gopher with tentacles
 ---

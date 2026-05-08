@@ -46,3 +46,9 @@ hugo.linux
 
 .vscode
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
