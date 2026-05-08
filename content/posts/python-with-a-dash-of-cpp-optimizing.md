@@ -6,7 +6,7 @@ categories:
     - projects
     - glance-inmobi
 cover:
-    image: /images/python-with-a-dash-of-cpp-optimizing/cpp_python1.png
+    image: images/python-with-a-dash-of-cpp-optimizing/cover.webp
     caption: "Python on C++ Illustration"
     alt: A blue and yellow python wrapped around C++ logo
 ---

@@ -5,7 +5,7 @@ tags: ["yaml", "configurations", "python", "pydantic"]
 categories:
     - general
 cover:
-    image: /images/sane-configs-with-pydantic-settings/cover.jpg
+    image: images/sane-configs-with-pydantic-settings/cover.webp
     caption: "Configurations"
     alt: "Configurations"
 ---

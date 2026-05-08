@@ -5,9 +5,8 @@ requires-python = ">=3.11"
 [[package]]
 name = "blog-animations"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
-    { name = "imageio" },
     { name = "numpy" },
     { name = "pillow" },
     { name = "playwright" },
@@ -15,8 +14,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "imageio", specifier = ">=2.34" },
-    { name = "numpy", specifier = ">=1.26" },
+    { name = "numpy", specifier = ">=2.4.2" },
     { name = "pillow", specifier = ">=10.0" },
     { name = "playwright", specifier = ">=1.45" },
 ]
@@ -35,19 +33,6 @@ wheels = [
     { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp313/cp313/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f82cb6cddc27dd81c96b1506f4aa7def15070c3b2a67d4e46fd19016aacce6cf" },
     { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/macosx_11_0_universal2/greenlet/3.4.0/greenlet-3.4.0-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:10a07aca6babdd18c16a3f4f8880acfffc2b88dfe431ad6aa5f5740759d7d75e" },
     { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/cp314/cp314/manylinux_2_24_x86_64/manylinux_2_28_x86_64/greenlet/3.4.0/greenlet-3.4.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4df3b0b2289ec686d3c821a5fee44259c05cfe824dd5e6e12c8e5f5df23085cf" },
-]
-
-[[package]]
-name = "imageio"
-version = "2.37.3"
-source = { registry = "https://lerna.tools.corp.linkedin.com/pypi/simple/" }
-dependencies = [
-    { name = "numpy" },
-    { name = "pillow" },
-]
-sdist = { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-external/ImageIO/2.37.3/imageio-2.37.3.tar.gz", hash = "sha256:bbb37efbfc4c400fcd534b367b91fcd66d5da639aaa138034431a1c5e0a41451" }
-wheels = [
-    { url = "https://dev-artifactory.corp.linkedin.com:8083/artifactory/pypi-wheels/v3/pypi/py3/none/any/imageio/2.37.3/imageio-2.37.3-py3-none-any.whl", hash = "sha256:f0acb95916a547af41eae3e0c6d2b0dab99c876e7e925c859e7c5b69fc5ca917" },
 ]
 
 [[package]]
