@@ -51,7 +51,7 @@ The issue likely lies with the preforking mechanism in the `gofiber` library whi
 	}
 ...
 ```
-![I know this gif](/images/A-tale-of-suicidal-container/I-know-this.gif)
+![I know this gif](/images/A-tale-of-suicidal-container/I-know-this.webp)
 This snippet essentially checks if the parent process is still alive. If not, it exits. Such behavior is common in preforking servers. The parent process listens to the port and forks children to handle requests. If the parent process dies, the children are useless. So, they exit. But how do they know if the parent died? They check if the parent process id is 1. In Linux, the parent process id 1 is `init` process. Any orphaned process is adopted by `init` process.
 
 The culprit? The line `ENTRYPOINT ["/app"]` in the Dockerfile. Docker assigns PID 1 to the entrypoint process, this unwittingly condemned my application to an existential crisis. With no parent process to claim it, the app chose the path of least resistance: to commit suicide. Effectively **it kills itself because it thinks it's an orphan.**
