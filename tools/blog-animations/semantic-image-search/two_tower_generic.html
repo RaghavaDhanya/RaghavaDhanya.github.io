@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Generic two-tower</title>
+<style>
+  :root {
+    --ink: #4b4b55;
+    --sec: #8a8a93;
+    --mid: #b6b6be;
+    --hair: #dcdce2;
+    --conn: #d7dbe2;
+    --bg: #ffffff;
+    --peri-fill: #b9c8e8;  --peri-pill: #e9eef9;  --peri-dot: #6e8cc4;
+    --coral-fill: #f0c4b6; --coral-pill: #fbe9e2; --coral-dot: #db9f8d;
+    --space-fill: #e7f3ed; --sim: #8fbfae;
+  }
+  html, body { margin:0; padding:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .stage { width:720px; height:540px; position:relative; }
+  svg { width:100%; height:100%; display:block; }
+
+  .label { fill:var(--ink); font-size:15px; }
+  .title { fill:var(--sec); font-size:13px; letter-spacing:0.06em; text-transform:uppercase; }
+  .tower-peri  { fill:var(--peri-fill); }
+  .tower-coral { fill:var(--coral-fill); }
+  .pill-peri   { fill:var(--peri-pill); }
+  .pill-coral  { fill:var(--coral-pill); }
+  .cell-peri   { fill:var(--peri-fill); }
+  .cell-coral  { fill:var(--coral-fill); }
+  .space-box   { fill:var(--space-fill); }
+  .conn { fill:none; stroke:var(--conn); stroke-width:1.6; }
+  .dot-peri  { fill:var(--peri-dot); }
+  .dot-coral { fill:var(--coral-dot); }
+  .sim-line { stroke:var(--sim); stroke-width:2.4; fill:none; stroke-linecap:round; }
+  .sim-text { fill:var(--sim); font-size:13px; font-style:italic; }
+  .match-line { stroke:var(--sim); stroke-width:2.4; fill:none; stroke-linecap:round; }
+  .nonmatch-line { stroke:var(--mid); stroke-width:1.6; fill:none; stroke-dasharray:4 4; }
+  .dot-grey { fill:var(--mid); }
+  .lbl-match { fill:var(--sim); font-size:12px; font-style:italic; }
+  .lbl-non  { fill:var(--sec); font-size:12px; font-style:italic; }
+
+  .controls { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; }
+  .controls button { font:inherit; font-size:12px; color:var(--sec); background:var(--bg); border:1px solid var(--hair); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  .phase { font-size:11px; color:var(--mid); font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="stage"><svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg></div>
+<div class="controls"><button id="restart">Restart</button><span class="phase" id="phaseLabel"></span></div>
+<script>
+window.__palette = {
+  bg: "#ffffff",
+  fg: [
+    "#4b4b55", "#8a8a93", "#b6b6be", "#dcdce2", "#eef0f3", "#d7dbe2",
+    "#b9c8e8", "#e9eef9", "#6e8cc4",
+    "#f0c4b6", "#fbe9e2", "#db9f8d",
+    "#e7f3ed", "#8fbfae"
+  ],
+};
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('plot');
+function el(tag,attrs={},parent=svg){const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);parent.appendChild(e);return e;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp01(t){return Math.max(0,Math.min(1,t));}
+function easeInOutCubic(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function smooth(a,b,x){const t=clamp01((x-a)/(b-a));return t*t*(3-2*t);}
+function qbez(p0,p1,p2,t){const u=1-t;return{x:u*u*p0.x+2*u*t*p1.x+t*t*p2.x,y:u*u*p0.y+2*u*t*p1.y+t*t*p2.y};}
+// gentle rounded polygon: small quadratic at each corner
+function roundedPoly(pts,r){
+  const n=pts.length; let d='';
+  for(let i=0;i<n;i++){
+    const V=pts[i],P=pts[(i-1+n)%n],N=pts[(i+1)%n];
+    const tP={x:P.x-V.x,y:P.y-V.y}, tN={x:N.x-V.x,y:N.y-V.y};
+    const lP=Math.hypot(tP.x,tP.y)||1, lN=Math.hypot(tN.x,tN.y)||1;
+    const rP=Math.min(r,lP/2), rN=Math.min(r,lN/2);
+    const en={x:V.x+tP.x/lP*rP,y:V.y+tP.y/lP*rP};
+    const ex={x:V.x+tN.x/lN*rN,y:V.y+tN.y/lN*rN};
+    d+=(i===0?`M${en.x} ${en.y}`:`L${en.x} ${en.y}`)+` Q ${V.x} ${V.y} ${ex.x} ${ex.y}`;
+  }
+  return d+'Z';
+}
+
+const TOWERS=[
+  {key:'peri',  cx:190, label:'query',     baseY:472, topY:250, baseHalf:72, topHalf:26, vecY:228, point:{x:322,y:132}},
+  {key:'coral', cx:530, label:'candidate', baseY:472, topY:250, baseHalf:72, topHalf:26, vecY:228, point:{x:360,y:120}},
+];
+const NONMATCH={x:410,y:70};   // a non-matching candidate, lands far from the query
+const SPACE={x:280,y:40,w:160,h:150};
+const N_CELLS=5, CELL=16, CELL_GAP=4;
+
+el('text',{x:SPACE.x+SPACE.w/2,y:SPACE.y-12,'text-anchor':'middle',class:'title'}).textContent='shared latent space';
+el('rect',{x:SPACE.x,y:SPACE.y,width:SPACE.w,height:SPACE.h,rx:14,class:'space-box'});
+
+const towerEls=TOWERS.map(tw=>{
+  const g=el('g');
+  const isPeri=tw.key==='peri';
+  const start={x:tw.cx,y:tw.vecY-4};
+  const ctrl={x:lerp(tw.cx,tw.point.x,0.5),y:tw.vecY-70};
+  const conn=el('path',{d:`M${start.x} ${start.y} Q ${ctrl.x} ${ctrl.y} ${tw.point.x} ${tw.point.y}`,class:'conn'});
+  const verts=[{x:tw.cx-tw.baseHalf,y:tw.baseY},{x:tw.cx+tw.baseHalf,y:tw.baseY},{x:tw.cx+tw.topHalf,y:tw.topY},{x:tw.cx-tw.topHalf,y:tw.topY}];
+  el('path',{d:roundedPoly(verts,9),class:isPeri?'tower-peri':'tower-coral'},g);
+  const pw=116,ph=30;
+  el('rect',{x:tw.cx-pw/2,y:472-ph/2,width:pw,height:ph,rx:15,class:isPeri?'pill-peri':'pill-coral'},g);
+  el('text',{x:tw.cx,y:472+5,'text-anchor':'middle',class:'label'},g).textContent=tw.label;
+  const rowW=N_CELLS*CELL+(N_CELLS-1)*CELL_GAP, cells=[];
+  for(let i=0;i<N_CELLS;i++){ cells.push(el('rect',{x:tw.cx-rowW/2+i*(CELL+CELL_GAP),y:tw.vecY-CELL,width:CELL,height:CELL,rx:4,class:isPeri?'cell-peri':'cell-coral',opacity:0},g)); }
+  return {tw,conn,cells,start,ctrl};
+});
+
+const overlay=el('g');
+const Q=TOWERS[0].point, M=TOWERS[1].point, NM=NONMATCH;
+// the matching pair lands close (short solid link); a non-matching candidate lands far (long dashed link)
+const matchLink=el('line',{x1:Q.x,y1:Q.y,x2:Q.x,y2:Q.y,class:'match-line',opacity:0},overlay);
+const nonMatchLink=el('line',{x1:Q.x,y1:Q.y,x2:Q.x,y2:Q.y,class:'nonmatch-line',opacity:0},overlay);
+towerEls.forEach(o=>{ o.point=el('circle',{cx:o.tw.cx,cy:o.tw.baseY,r:7,class:o.tw.key==='peri'?'dot-peri':'dot-coral',opacity:0},overlay); });
+const nonMatchDot=el('circle',{cx:NM.x,cy:NM.y,r:6.5,class:'dot-grey',opacity:0},overlay);
+const matchLbl=el('text',{x:(Q.x+M.x)/2,y:(Q.y+M.y)/2-12,'text-anchor':'middle',class:'lbl-match',opacity:0},overlay);
+matchLbl.textContent='match';
+const nonLbl=el('text',{x:NM.x-4,y:NM.y-12,'text-anchor':'middle',class:'lbl-non',opacity:0},overlay);
+nonLbl.textContent='not a match';
+
+const phases=[{name:'encode',dur:1800},{name:'project',dur:1500},{name:'compare',dur:1700},{name:'hold',dur:1200}];
+const totalDur=phases.reduce((s,p)=>s+p.dur,0);
+const phaseLabel=document.getElementById('phaseLabel');
+function phaseAt(t){let acc=0;for(const p of phases){if(t<acc+p.dur)return{name:p.name,local:(t-acc)/p.dur};acc+=p.dur;}return{name:'hold',local:1};}
+
+function applyFrame(t){
+  const {name,local}=phaseAt(t);
+  phaseLabel.textContent=name;
+  const holdFade=name==='hold'?smooth(0.62,1,local):0;
+  for(const o of towerEls){
+    const {tw}=o;
+    let vecFill=0,dotOp=0,dx=tw.cx,dy=o.start.y;
+    if(name==='encode'){ const e=easeInOutCubic(local); dx=tw.cx; dy=lerp(tw.baseY,o.start.y,e); vecFill=smooth(0.55,1,local); dotOp=smooth(0,0.12,local); }
+    else if(name==='project'){ const p=qbez(o.start,o.ctrl,tw.point,easeInOutCubic(local)); dx=p.x; dy=p.y; vecFill=1; dotOp=1; }
+    else { dx=tw.point.x; dy=tw.point.y; vecFill=1; dotOp=1; }
+    o.cells.forEach((c,i)=>{ const a0=i/o.cells.length; c.setAttribute('opacity',smooth(a0,a0+1/o.cells.length,vecFill)*(1-holdFade)); });
+    o.point.setAttribute('cx',dx); o.point.setAttribute('cy',dy); o.point.setAttribute('opacity',dotOp*(1-holdFade));
+    o.conn.setAttribute('opacity',(name==='encode'?smooth(0.6,1,local):1)*(1-0.7*holdFade));
+  }
+  // non-match dot is another candidate already sitting in the space; it fades in as dots arrive
+  let nmOp=0;
+  if(name==='project') nmOp=smooth(0.35,1,local);
+  else if(name==='compare'||name==='hold') nmOp=1;
+  nonMatchDot.setAttribute('opacity', nmOp*(1-holdFade));
+
+  // compare: draw the close (match) link and the far (non-match) link, then the labels
+  let mAmt=0,fAmt=0,lblOp=0;
+  if(name==='compare'){ mAmt=easeInOutCubic(clamp01(local/0.5)); fAmt=easeInOutCubic(clamp01((local-0.18)/0.5)); lblOp=smooth(0.55,0.85,local); }
+  else if(name==='hold'){ mAmt=1; fAmt=1; lblOp=1; }
+  matchLink.setAttribute('x2',lerp(Q.x,M.x,mAmt)); matchLink.setAttribute('y2',lerp(Q.y,M.y,mAmt));
+  matchLink.setAttribute('opacity', smooth(0,0.18,mAmt)*(1-holdFade));
+  nonMatchLink.setAttribute('x2',lerp(Q.x,NM.x,fAmt)); nonMatchLink.setAttribute('y2',lerp(Q.y,NM.y,fAmt));
+  nonMatchLink.setAttribute('opacity', smooth(0,0.18,fAmt)*0.85*(1-holdFade));
+  matchLbl.setAttribute('opacity', lblOp*(1-holdFade));
+  nonLbl.setAttribute('opacity', lblOp*(1-holdFade));
+}
+window.__virtualTimeMs=null;let startTime=null;
+function renderAt(e){applyFrame(((e%totalDur)+totalDur)%totalDur);}
+window.renderAt=renderAt;
+function frame(now){if(window.__virtualTimeMs!==null){renderAt(window.__virtualTimeMs);requestAnimationFrame(frame);return;}if(startTime===null)startTime=now;applyFrame((now-startTime)%totalDur);requestAnimationFrame(frame);}
+document.getElementById('restart').addEventListener('click',()=>{startTime=null;});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inference flow</title>
+<style>
+  :root {
+    --ink:#4b4b55; --sec:#8a8a93; --mid:#b6b6be; --hair:#dcdce2; --conn:#d7dbe2; --bg:#ffffff;
+    --cyan:#bfe6ea;
+    --coral-fill:#f0c4b6; --coral-pill:#fbe9e2; --coral-dot:#db9f8d;
+    --peri-fill:#b9c8e8; --peri-pill:#e9eef9; --peri-dot:#6e8cc4;
+    --yellow-panel:#f5eed0; --mint-halo:#c4e7e0;
+  }
+  html,body { margin:0; padding:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .stage { width:720px; height:540px; position:relative; }
+  svg { width:100%; height:100%; display:block; }
+
+  .label { fill:var(--ink); font-size:13px; }
+  .lane  { fill:var(--sec); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; }
+  .title { fill:var(--sec); font-size:13px; letter-spacing:0.06em; text-transform:uppercase; }
+  .enc      { fill:var(--cyan); }
+  .enc-text { fill:var(--ink); font-size:12.5px; }
+  .in-coral { fill:var(--coral-pill); }
+  .in-peri  { fill:var(--peri-pill); }
+  .cell-coral { fill:var(--coral-fill); }
+  .cell-peri  { fill:var(--peri-fill); }
+  .index-box { fill:var(--yellow-panel); }
+  .arrow { stroke:var(--conn); stroke-width:1.6; fill:none; }
+  .arrow-head { fill:var(--conn); }
+  .store-dot { fill:var(--coral-dot); opacity:0.5; }
+  .ring { fill:var(--mint-halo); }
+  .dot-coral { fill:var(--coral-dot); }
+  .dot-peri  { fill:var(--peri-dot); }
+  .res { fill:var(--coral-fill); }
+
+  .controls { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; }
+  .controls button { font:inherit; font-size:12px; color:var(--sec); background:var(--bg); border:1px solid var(--hair); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  .phase { font-size:11px; color:var(--mid); font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="stage"><svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg></div>
+<div class="controls"><button id="restart">Restart</button><span class="phase" id="phaseLabel"></span></div>
+<script>
+window.__palette = {
+  bg:"#ffffff",
+  fg:[
+    "#4b4b55","#8a8a93","#b6b6be","#dcdce2","#eef0f3","#d7dbe2",
+    "#bfe6ea",
+    "#f0c4b6","#fbe9e2","#db9f8d",
+    "#b9c8e8","#e9eef9","#6e8cc4",
+    "#f5eed0","#c4e7e0"
+  ],
+};
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('plot');
+function el(tag,attrs={},parent=svg){ const e=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v); parent.appendChild(e); return e; }
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp01(t){return Math.max(0,Math.min(1,t));}
+function easeInOutCubic(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function smooth(a,b,x){const t=clamp01((x-a)/(b-a));return t*t*(3-2*t);}
+function qbez(p0,p1,p2,t){const u=1-t;return{x:u*u*p0.x+2*u*t*p1.x+t*t*p2.x,y:u*u*p0.y+2*u*t*p1.y+t*t*p2.y};}
+function arrow(x1,y1,x2,y2,parent=svg){
+  el('line',{x1,y1,x2,y2,class:'arrow'},parent);
+  const a=Math.atan2(y2-y1,x2-x1),h=7;
+  el('polygon',{points:`${x2},${y2} ${x2-h*Math.cos(a-0.4)},${y2-h*Math.sin(a-0.4)} ${x2-h*Math.cos(a+0.4)},${y2-h*Math.sin(a+0.4)}`,class:'arrow-head'},parent);
+}
+function block(cx,cy,w,h,lines,cls,textCls,parent=svg){
+  el('rect',{x:cx-w/2,y:cy-h/2,width:w,height:h,rx:9,class:cls},parent);
+  const n=lines.length, lh=15, y0=cy-(n-1)*lh/2+4.5;
+  lines.forEach((ln,i)=>{ el('text',{x:cx,y:y0+i*lh,'text-anchor':'middle',class:textCls},parent).textContent=ln; });
+}
+function cells(cx,cy,cls,parent=svg){
+  const N=4,C=14,G=4,rowW=N*C+(N-1)*G,out=[];
+  for(let i=0;i<N;i++){ out.push(el('rect',{x:cx-rowW/2+i*(C+G),y:cy-C/2,width:C,height:C,rx:3,class:'cell '+cls,opacity:0},parent)); }
+  return out;
+}
+
+// ---- geometry ----
+const OFF_Y=130, ON_Y=410;
+const INPUT_X=70, ENC_X=212, VEC_X=336;
+const IDX={x:432,y:168,w:150,h:204};           // ANN index box
+const IDX_IN_TOP={x:IDX.x,y:230}, IDX_IN_BOT={x:IDX.x,y:312};
+const RES_X=656, RES_Y=270;
+
+// ingestion lane label (always visible)
+el('text',{x:ENC_X,y:OFF_Y-52,'text-anchor':'middle',class:'lane'}).textContent='ingestion · offline';
+
+// nearest neighbour system (ANN is only introduced later in the post)
+el('text',{x:IDX.x+IDX.w/2,y:IDX.y-27,'text-anchor':'middle',class:'title'}).textContent='nearest neighbour';
+el('text',{x:IDX.x+IDX.w/2,y:IDX.y-12,'text-anchor':'middle',class:'title'}).textContent='system';
+el('rect',{x:IDX.x,y:IDX.y,width:IDX.w,height:IDX.h,rx:12,class:'index-box'});
+// resident stored vectors (scattered)
+const STORE=[[42,46],[96,38],[120,84],[58,104],[104,140],[36,164],[92,182],[128,150]];
+const storeDots=STORE.map(([dx,dy])=>el('circle',{cx:IDX.x+dx,cy:IDX.y+dy,r:5,class:'store-dot'}));
+
+// offline lane
+el('rect',{x:INPUT_X-23,y:OFF_Y-23,width:46,height:46,rx:6,class:'in-coral'});
+el('text',{x:INPUT_X,y:OFF_Y+4,'text-anchor':'middle',class:'label'}).textContent='🖼';
+block(ENC_X,OFF_Y,128,56,['CLIP image','encoder'],'enc','enc-text');
+const vecImg=cells(VEC_X,OFF_Y,'cell-coral');
+arrow(INPUT_X+24,OFF_Y,ENC_X-66,OFF_Y);
+arrow(ENC_X+66,OFF_Y,VEC_X-38,OFF_Y);
+// curve vecImg -> index
+const offP0={x:VEC_X,y:OFF_Y}, offCtrl={x:lerp(VEC_X,IDX.x,0.55),y:OFF_Y+8}, offLand={x:IDX.x+IDX.w*0.42,y:IDX.y+IDX.h*0.30};
+const offCurve=el('path',{d:`M${offP0.x} ${offP0.y} Q ${offCtrl.x} ${offCtrl.y} ${offLand.x} ${offLand.y}`,class:'arrow'});
+const offLen=bezLen(offP0,offCtrl,offLand); offCurve.setAttribute('stroke-dasharray',offLen); offCurve.setAttribute('stroke-dashoffset',offLen);
+
+// online lane — hidden during ingestion, revealed when the query runs
+const gQuery=el('g',{opacity:0});
+el('text',{x:ENC_X,y:ON_Y+60,'text-anchor':'middle',class:'lane'},gQuery).textContent='query · online';
+el('rect',{x:INPUT_X-52,y:ON_Y-16,width:104,height:32,rx:16,class:'in-peri'},gQuery);
+el('text',{x:INPUT_X,y:ON_Y+4,'text-anchor':'middle',class:'label'},gQuery).textContent='search text';
+block(ENC_X,ON_Y,128,56,['CLIP text','encoder'],'enc','enc-text',gQuery);
+const vecTxt=cells(VEC_X,ON_Y,'cell-peri',gQuery);
+arrow(INPUT_X+53,ON_Y,ENC_X-66,ON_Y,gQuery);
+arrow(ENC_X+66,ON_Y,VEC_X-38,ON_Y,gQuery);
+const onP0={x:VEC_X,y:ON_Y}, onCtrl={x:lerp(VEC_X,IDX.x,0.55),y:ON_Y-8}, onLand={x:IDX.x+IDX.w*0.42,y:IDX.y+IDX.h*0.66};
+const onCurve=el('path',{d:`M${onP0.x} ${onP0.y} Q ${onCtrl.x} ${onCtrl.y} ${onLand.x} ${onLand.y}`,class:'arrow'},gQuery);
+const onLen=bezLen(onP0,onCtrl,onLand); onCurve.setAttribute('stroke-dasharray',onLen); onCurve.setAttribute('stroke-dashoffset',onLen);
+
+const offFH=(VEC_X-INPUT_X)/((VEC_X-INPUT_X)+offLen);
+const onFH =(VEC_X-INPUT_X)/((VEC_X-INPUT_X)+onLen);
+
+// index -> results — revealed only when results come back
+const gResults=el('g',{opacity:0});
+arrow(IDX.x+IDX.w,RES_Y,RES_X-34,RES_Y,gResults);
+el('text',{x:RES_X,y:RES_Y-72,'text-anchor':'middle',class:'title'},gResults).textContent='results';
+const resThumbs=[-1,0,1].map(k=>el('rect',{x:RES_X-22,y:RES_Y-22+k*30,width:44,height:24,rx:4,class:'res',opacity:0},gResults));
+
+// the query's nearest matches = the stored vectors closest to where the query lands
+const MATCH=STORE.map(([dx,dy],i)=>({i,d:Math.hypot(IDX.x+dx-onLand.x,IDX.y+dy-onLand.y)}))
+  .sort((a,b)=>a.d-b.d).slice(0,3).map(o=>o.i);
+
+// overlay: moving dots + match rings on top
+const overlay=el('g');
+const matchRings=MATCH.map(i=>el('circle',{cx:storeDots[i].getAttribute('cx'),cy:storeDots[i].getAttribute('cy'),r:12,class:'ring',opacity:0},overlay));
+const ingestDot=el('circle',{cx:INPUT_X,cy:OFF_Y,r:6,class:'dot-coral',opacity:0},overlay);
+const queryDot =el('circle',{cx:INPUT_X,cy:ON_Y,r:6,class:'dot-peri', opacity:0},overlay);
+// the 3 nearest matches fly out of the index and become the results (no lines)
+const RES_C=[-1,0,1].map(kk=>({x:RES_X, y:RES_Y-10+kk*30}));
+const fliers=MATCH.map((idx,j)=>({
+  sx:parseFloat(storeDots[idx].getAttribute('cx')), sy:parseFloat(storeDots[idx].getAttribute('cy')),
+  tx:RES_C[j].x, ty:RES_C[j].y,
+  e:el('circle',{cx:0,cy:0,r:6,class:'dot-coral',opacity:0},overlay),
+}));
+
+// ---- animation ----
+const phases=[{name:'ingest',dur:1900},{name:'query',dur:2900},{name:'hold',dur:1200}];
+const totalDur=phases.reduce((s,p)=>s+p.dur,0);
+const phaseLabel=document.getElementById('phaseLabel');
+function phaseAt(t){let acc=0;for(const p of phases){if(t<acc+p.dur)return{name:p.name,local:(t-acc)/p.dur};acc+=p.dur;}return{name:'hold',local:1};}
+
+function bezLen(p0,c,p2,N=24){ let L=0,pr=p0; for(let i=1;i<=N;i++){const t=i/N,p=qbez(p0,c,p2,t);L+=Math.hypot(p.x-pr.x,p.y-pr.y);pr=p;} return L; }
+// one continuous flow: input -> vector (straight) -> index landing (curve),
+// split by length so speed is continuous (no stop at the vector). t is 0..1 eased.
+function flowPos(inputX,vecX,y,p0,ctrl,land,len,t){
+  const hL=vecX-inputX, fH=hL/(hL+len);
+  if(t<fH){ return {x:lerp(inputX,vecX,t/fH), y, cp:0}; }
+  const cp=(t-fH)/(1-fH); const p=qbez(p0,ctrl,land,cp); return {x:p.x, y:p.y, cp};
+}
+
+function applyFrame(t){
+  const {name,local}=phaseAt(t);
+  phaseLabel.textContent=name;
+  const holdFade = name==='hold'? smooth(0.62,1,local):0;
+
+  // progressive reveal: ingestion only first, then the query lane, then the results arrow
+  const queryReveal   = name==='ingest' ? 0 : (name==='query' ? smooth(0,0.18,local) : 1);
+  const resultsReveal = name==='query'  ? smooth(0.6,0.74,local) : (name==='hold' ? 1 : 0);
+  gQuery.setAttribute('opacity', queryReveal*(1-holdFade));
+  gResults.setAttribute('opacity', resultsReveal*(1-holdFade));
+
+  // ingest dot — single continuous flow, the curve draws behind it
+  let ingP=offLand, vecImgFill=1;
+  if(name==='ingest'){
+    const t=easeInOutCubic(local);
+    const fp=flowPos(INPUT_X,VEC_X,OFF_Y,offP0,offCtrl,offLand,offLen,t);
+    ingP={x:fp.x,y:fp.y};
+    offCurve.setAttribute('stroke-dashoffset', offLen*(1-fp.cp));
+    vecImgFill=smooth(offFH-0.06, offFH+0.01, t);
+    ingestDot.setAttribute('opacity', smooth(0,0.06,local)*(1-holdFade));
+  } else {
+    offCurve.setAttribute('stroke-dashoffset', 0);          // stays drawn after ingestion
+    ingestDot.setAttribute('opacity', 1-holdFade);
+  }
+  offCurve.setAttribute('opacity', 1-holdFade);
+  ingestDot.setAttribute('cx',ingP.x); ingestDot.setAttribute('cy',ingP.y);
+  vecImg.forEach((c,i)=>{ const a0=i/vecImg.length; c.setAttribute('opacity',smooth(a0,a0+1/vecImg.length,vecImgFill)*(1-holdFade)); });
+
+  // query dot — same continuous flow on the online lane
+  let qP=onLand, vecTxtFill=0, ringOp=0, resOp=0;
+  if(name==='query'){
+    const t=easeInOutCubic(clamp01(local/0.5));
+    const fp=flowPos(INPUT_X,VEC_X,ON_Y,onP0,onCtrl,onLand,onLen,t);
+    qP={x:fp.x,y:fp.y};
+    onCurve.setAttribute('stroke-dashoffset', onLen*(1-fp.cp));
+    vecTxtFill=smooth(onFH-0.06, onFH+0.01, t);
+    ringOp=smooth(0.52,0.64,local);               // matches light up once query lands
+    resOp=smooth(0.84,1,local);                    // thumbnails settle as the dots arrive
+    queryDot.setAttribute('opacity', smooth(0,0.05,local)*(1-holdFade));
+  } else if(name==='hold'){
+    onCurve.setAttribute('stroke-dashoffset', 0); vecTxtFill=1; ringOp=1; resOp=1;
+    queryDot.setAttribute('opacity', 1-holdFade);
+  } else { // ingest: online lane hidden, curve reset
+    onCurve.setAttribute('stroke-dashoffset', onLen);
+    queryDot.setAttribute('opacity', 0);
+  }
+  queryDot.setAttribute('cx',qP.x); queryDot.setAttribute('cy',qP.y);
+  vecTxt.forEach((c,i)=>{ const a0=i/vecTxt.length; c.setAttribute('opacity',smooth(a0,a0+1/vecTxt.length,vecTxtFill)); });   // parent gQuery carries reveal+holdFade
+  matchRings.forEach(r=>r.setAttribute('opacity',ringOp*0.55*(1-holdFade)));
+  resThumbs.forEach((r,i)=>{ r.setAttribute('opacity',smooth(i*0.15,i*0.15+0.4,resOp)); });                                  // parent gResults carries reveal+holdFade
+
+  // the 3 nearest matches fly out of the index to the result slots, then the thumbnails take over.
+  // single easeInOutCubic over a linear window, to match the dot-travel easing elsewhere.
+  const flyRaw = name==='query' ? clamp01((local-0.66)/0.24) : (name==='hold' ? 1 : 0);
+  const flyE = easeInOutCubic(flyRaw);
+  fliers.forEach(f=>{
+    f.e.setAttribute('cx',lerp(f.sx,f.tx,flyE));
+    f.e.setAttribute('cy',lerp(f.sy,f.ty,flyE));
+    f.e.setAttribute('opacity', smooth(0,0.12,flyRaw)*(1-smooth(0.86,1,flyRaw))*(1-holdFade));
+  });
+}
+
+window.__virtualTimeMs=null; let startTime=null;
+function renderAt(e){applyFrame(((e%totalDur)+totalDur)%totalDur);}
+window.renderAt=renderAt;
+function frame(now){ if(window.__virtualTimeMs!==null){renderAt(window.__virtualTimeMs);requestAnimationFrame(frame);return;}
+  if(startTime===null)startTime=now; applyFrame((now-startTime)%totalDur); requestAnimationFrame(frame); }
+document.getElementById('restart').addEventListener('click',()=>{startTime=null;});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
