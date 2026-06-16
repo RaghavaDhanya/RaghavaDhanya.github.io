@@ -7,6 +7,10 @@ tags: ["clip", "openai", "semantic-search", "typesense", "python", "ml", "ai"]
 categories:
     - projects
     - glance-inmobi
+cover:
+    image: images/semantic-image-search/cover.png
+    alt: "Two-tower semantic image search: a query tower and a candidate tower mapping into a shared latent space"
+    hiddenInSingle: true
 ---
 [Glance](https://glance.com/) puts content on the lock screens of millions of phones. A lot of that content is news, and that comes from many publishers who post to Glance. Stories need images, which at Glance means wallpapers. Most publisher images wouldn't fit the high quality and size requirements of full-screen wallpaper. Even if they did, we probably don't have permission to use them. And most stories don't come with one at all.
 
@@ -16,29 +20,33 @@ In early 2021, the system in place was based on tags. We would use expensive ima
 
 The motivation was the complaints from editors. The "auto" publishing flow would require too many interventions from the editors, the support channel for the system was filled with issues of image search.
 
-## The query types
+## Two kinds of queries
 
 The system gets queried from two quite different places. The first is automatic publishing. When a post comes in, the publishing system auto-selects an image for it, and in that case "query" is just the article's title and description. This is the most used path and the queries are not compositional and just a news story title.
 
 The second is a human typing a query by hand. This happens when they did not like the auto-selected image and want to pick a different one, or when they are publishing brand new article and didn't come from automatic workflow. This is where the queries get specific, like a caption to an exact picture in their head. 
 
-## How should this system be built?
+## How should we build it?
 Should we just improve the tag-based system? Maybe a better API? more consistent tags? or a more expressive tags API maybe? maybe we cleanup some of the noisy tags? or make a weighted tag matching by TF-IDF (i.e. rarer tags contain more information)? All seem like good ideas. In this system the quality of a search was only ever as good as the tags, and the tags could never cover the long tail of all the details in the picture. For example, searching "cricketers" might work, "cricketers in white jersey" will not, because almost no API tags the jersey color. 
 
 And even if we build the best tags system, how do we solve the latency issue? This was the motivation to build a semantic vector search. But at the same time we needed immediate fixes until this semantic system could be built. So we invested in both. 
 
-## What is a semantic search?
+## Building a semantic search
+
+### What semantic search is
 
 A keyword search matches the words in your query against the words (here, the tags) attached to each image. A semantic search matches *meaning*. If you search "a cricketer celebrating", you want the right photo back even when its tags say nothing about celebrating: the words don't overlap, but the meaning does. So the goal shifts from "which words do the query and the image share" to "how close is what they mean".
 
 My experience with systems like this was in text, i.e. to calculate similarity between different texts. Rather than matching texts by words, we embed them into vectors and take cosine similarity to match them. If I want to build it for images, I could embed images into embeddings, and match with other images and find the most similar ones. But our input is text. If somehow I could convert the input text into an embedding that's similar to an image embedding, then the problem is solved.
 
-## The two tower model.
+### The two-tower model
 The two-tower idea comes from recommendation systems. At Glance, recommendation is our bread and butter so we had some understanding of this type of system.  The main reference for us was Google's [YouTube retrieval paper](https://research.google/pubs/deep-neural-networks-for-youtube-recommendations/). You have two separate neural networks, the two "towers". One encodes the query (in YouTube's case the user and context), the other encodes the candidate (a video). Each tower outputs a vector, and the towers are trained together so that a matching query-candidate pair lands close in that shared latent space and a non-matching pair lands far apart. Then to recommend content all you have to do is embed the "user"(query) and find all the nearest contents in the latent space (candidates).
 
 ![Diagram: a generic two-tower model. A query tower and a candidate tower each take their own input, produce an embedding vector, and the two vectors meet in a shared latent space where similarity is measured between them](/images/semantic-image-search/two-tower-generic.webp)
 
 In our case, the query would be the article title and description, and the candidate would be the images.
+
+#### Training the towers
 
 How do you actually train it so that matching pairs get a high dot product? The YouTube paper frames it as extreme multiclass classification: every candidate in the corpus is its own class, so you are classifying among millions of classes. Given a query embedding, which candidate out of the entire corpus is the right one? That is a softmax over all candidates:
 
@@ -52,7 +60,7 @@ We built and trained the towers with [TensorFlow Recommenders](https://www.tenso
 
 One detail on the negatives: TFRS generally suggests hard negative mining, but we used a simpler variant and skipped it. We just treat every other pair in the batch as a negative, plain in-batch negatives. So within a batch, each pair is the one positive against itself and a negative against all the rest, which makes the loss symmetric: every image is pushed away from the other titles, and every title away from the other images.
 
-### Bootstrapping the two-tower model
+#### Bootstrapping the towers
 
 Are 3 million image-text pairs enough to train a fully semantic image search? I didn't think so; these are news stories and their titles. "These are a very specific distribution of images and text. So it probably would not cover a lot of semantic concepts especially for the human editor queries. I did give it a try; the training took forever. 
 
@@ -93,7 +101,7 @@ Instead of checking every image, ANN algorithms build an index ahead of time tha
 
 This is very simplified. Real ANN libraries layer on a lot more, smarter indexing structures, quantization to shrink the vectors, multiple probes to recover accuracy, and so on, all to make it genuinely fast while limiting the downsides of approximating. There are many existing libraries for this, like [Annoy](https://github.com/spotify/annoy), [Faiss](https://github.com/facebookresearch/faiss), etc. We used [ScaNN](https://github.com/google-research/google-research/tree/master/scann), Google's ANN library, mainly because we were on GCP and got it out of the box rather than having to deploy and manage our own.  And it is one of best on the [ANN benchmarks](https://ann-benchmarks.com/index.html#algorithms).
 
-## How we measured it
+## Results
 
 Offline, while experimenting, we used **Recall@K** and **Precision@K**, where K is the number of images we return as results. Precision@K is: of the K images we showed, how many were actually relevant. Recall@K is: of all the relevant images in the pool, how many did we catch in the top K. In our case the test dataset was the image-text pairs, so the value can only be either 0 or 1, 0 when the image is not surfaced in the top K results for its text, and 1 when it is. So we can aggregate these metrics across the whole test dataset.
 
@@ -107,9 +115,7 @@ These two production metrics map well to our offline metrics. Auto-select shows 
 
 The share of auto-selected images a publisher felt the need to manually change came down by more than **half**. Even when a publisher did go and search by hand, it was **very rare** that they had to license a brand-new image. The typical latency of the system was less than 100ms.
 
-
-## Fun queries we demoed
-
+{{< collapse summary="**Fun queries we demoed**" >}}
 **"cricketers in white jersey"**
 
 ![Search results for "cricketers in white jersey": cricketers in white kit](/images/semantic-image-search/demo-cricketers-in-white-jersey.webp)
@@ -141,3 +147,4 @@ The share of auto-selected images a publisher felt the need to manually change c
 **"mother of dragons"**
 
 ![Search results for "mother of dragons": Daenerys Targaryen](/images/semantic-image-search/demo-mother-of-dragons.webp)
+{{< /collapse >}}
