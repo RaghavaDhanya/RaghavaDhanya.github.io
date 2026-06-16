@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ANN clustering</title>
+<style>
+  :root{
+    --ink:#4b4b55; --sec:#8a8a93; --mid:#b6b6be; --hair:#dcdce2; --conn:#d7dbe2; --bg:#ffffff;
+    --cmp:#cdd2da; --ring:#6b6b75;
+    --cyan-region:#dff4f5; --cyan-dot:#6fcdd6;
+    --coral-region:#fbe9e2; --coral-dot:#db9f8d;
+    --mint-region:#e7f3ed; --mint-dot:#6fbfae;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+    color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .stage{width:720px;height:540px;position:relative;}
+  svg{width:100%;height:100%;display:block;}
+  .caption{fill:var(--sec);font-size:15px;}
+  .qlabel{fill:var(--ink);font-size:13px;}
+  .axis{stroke:var(--conn);stroke-width:1.4;fill:none;stroke-linecap:round;}
+  .axis-head{fill:var(--conn);}
+  .axis-label{fill:var(--sec);font-size:12px;}
+  .data-dot{fill:var(--mid);}
+  .region-cyan{fill:var(--cyan-region);} .region-coral{fill:var(--coral-region);} .region-mint{fill:var(--mint-region);}
+  .pt-cyan{fill:var(--cyan-dot);} .pt-coral{fill:var(--coral-dot);} .pt-mint{fill:var(--mint-dot);}
+  .cmp-line{stroke:var(--cmp);stroke-width:1.6;stroke-dasharray:5 4;fill:none;}
+  .win-line{stroke:var(--coral-dot);stroke-width:2.4;fill:none;stroke-linecap:round;}
+  .qdot{fill:var(--ink);}
+  .res-ring{fill:none;stroke:var(--ring);stroke-width:2.4;}
+  .controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;}
+  .controls button{font:inherit;font-size:12px;color:var(--sec);background:var(--bg);border:1px solid var(--hair);border-radius:6px;padding:6px 12px;cursor:pointer;}
+  .phase{font-size:11px;color:var(--mid);font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<div class="stage"><svg id="plot" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet"></svg></div>
+<div class="controls"><button id="restart">Restart</button><span class="phase" id="phaseLabel"></span></div>
+<script>
+window.__palette={bg:"#ffffff",fg:[
+  "#4b4b55","#8a8a93","#b6b6be","#dcdce2","#d7dbe2","#cdd2da","#6b6b75",
+  "#dff4f5","#6fcdd6","#fbe9e2","#db9f8d","#e7f3ed","#6fbfae",
+  "#d2c1c1","#d6b0a7"]};
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('plot');
+function el(t,a={},p=svg){const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);p.appendChild(e);return e;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp01(t){return Math.max(0,Math.min(1,t));}
+function easeInOutCubic(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function smooth(a,b,x){const t=clamp01((x-a)/(b-a));return t*t*(3-2*t);}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function lerpColor(a,b,t){
+  const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
+  const pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];
+  const c=pa.map((v,k)=>Math.round(lerp(v,pb[k],t)));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+// ---- embedding-space axes ----
+const O={x:84,y:462}, AX={x:672,y:462}, AY={x:84,y:64};
+const gAxes=el('g',{opacity:0});
+el('line',{x1:O.x,y1:O.y,x2:AX.x,y2:AX.y,class:'axis'},gAxes);
+el('line',{x1:O.x,y1:O.y,x2:AY.x,y2:AY.y,class:'axis'},gAxes);
+el('polygon',{points:`${AX.x},${AX.y} ${AX.x-8},${AX.y-4} ${AX.x-8},${AX.y+4}`,class:'axis-head'},gAxes);
+el('polygon',{points:`${AY.x},${AY.y} ${AY.x-4},${AY.y+8} ${AY.x+4},${AY.y+8}`,class:'axis-head'},gAxes);
+el('text',{x:(O.x+AX.x)/2,y:O.y+26,'text-anchor':'middle',class:'axis-label'},gAxes).textContent='embedding dimension 1';
+const yl=el('text',{x:O.x-22,y:(O.y+AY.y)/2,'text-anchor':'middle',class:'axis-label',transform:`rotate(-90 ${O.x-22} ${(O.y+AY.y)/2})`},gAxes);
+yl.textContent='embedding dimension 2';
+
+// ---- query + clusters ----
+const Q={x:236,y:330};
+const OFFS=[[-30,-16],[14,-30],[34,8],[-12,26],[24,26],[-36,10],[2,-2],[-6,-30]];
+const CLUSTERS=[
+  {key:'cyan', c:{x:404,y:182}},
+  {key:'coral',c:{x:344,y:300}},
+  {key:'mint', c:{x:566,y:360}},
+];
+let WIN=0,best=1e9;
+CLUSTERS.forEach((cl,i)=>{const d=dist(Q,cl.c);if(d<best){best=d;WIN=i;}});
+
+// ---- build ----
+const points=[];
+CLUSTERS.forEach(cl=>{ cl.region=el('ellipse',{cx:cl.c.x,cy:cl.c.y,rx:62,ry:54,class:'region-'+cl.key,opacity:0}); });
+CLUSTERS.forEach((cl,ci)=>{
+  cl.pts=OFFS.map(([dx,dy])=>{
+    const pos={x:cl.c.x+dx,y:cl.c.y+dy};
+    const p={pos,ci,e:el('circle',{cx:pos.x,cy:pos.y,r:5,class:'data-dot',opacity:0})};
+    points.push(p); return p;
+  });
+  const ranked=[...cl.pts].sort((a,b)=>dist(a.pos,cl.c)-dist(b.pos,cl.c));
+  ranked.forEach((p,r)=>{ p.claim=0.08+0.62*(r/(cl.pts.length-1)); });
+  let bi=0,bd=1e9; cl.pts.forEach((p,i)=>{const d=dist(Q,p.pos);if(d<bd){bd=d;bi=i;}}); cl.near=bi;
+});
+// fill-only "donut" centres (outer colour ring + white core)
+CLUSTERS.forEach(cl=>{
+  cl.center=el('g',{opacity:0});
+  el('circle',{cx:cl.c.x,cy:cl.c.y,r:8,class:'pt-'+cl.key},cl.center);
+  el('circle',{cx:cl.c.x,cy:cl.c.y,r:3.6,fill:'#ffffff'},cl.center);
+});
+
+// overlay
+const overlay=el('g');
+const cmpLines=CLUSTERS.map((cl,i)=>el('line',{x1:Q.x,y1:Q.y,x2:Q.x,y2:Q.y,class:'cmp-line',opacity:0},overlay));
+const resRing=el('circle',{cx:CLUSTERS[WIN].pts[CLUSTERS[WIN].near].pos.x,cy:CLUSTERS[WIN].pts[CLUSTERS[WIN].near].pos.y,r:11,class:'res-ring',opacity:0},overlay);
+const qLabel=el('text',{x:Q.x,y:Q.y-16,'text-anchor':'middle',class:'qlabel',opacity:0},overlay);
+qLabel.textContent='query';
+const qdot=el('circle',{cx:Q.x-80,cy:Q.y,r:7,class:'qdot',opacity:0},overlay);
+const caption=el('text',{x:378,y:508,'text-anchor':'middle',class:'caption'});
+
+// ---- animation ----
+const phases=[
+  {name:'data',dur:1500},{name:'cluster',dur:1900},{name:'enter',dur:1100},
+  {name:'compare',dur:1900},{name:'pick',dur:1500},{name:'search',dur:2000},{name:'hold',dur:1300}];
+const order=phases.map(p=>p.name);
+const totalDur=phases.reduce((s,p)=>s+p.dur,0);
+const phaseLabel=document.getElementById('phaseLabel');
+function phaseAt(t){let acc=0;for(const p of phases){if(t<acc+p.dur)return{name:p.name,local:(t-acc)/p.dur};acc+=p.dur;}return{name:'hold',local:1};}
+const CAP={data:'image vectors fill the embedding space',cluster:'cluster them ahead of time',
+  enter:'a query arrives',compare:'compare it to each cluster center',pick:'pick the nearest cluster',
+  search:'search only inside it',hold:'search only inside it'};
+
+function applyFrame(t){
+  const {name,local}=phaseAt(t);
+  phaseLabel.textContent=name; caption.textContent=CAP[name];
+  const holdFade=name==='hold'?smooth(0.7,1,local):0;
+  const idx=order.indexOf(name);
+  const after=(ph)=>idx>order.indexOf(ph);
+  const atOrAfter=(ph)=>idx>=order.indexOf(ph);
+
+  gAxes.setAttribute('opacity',(name==='data'?smooth(0,0.4,local):1)*(1-holdFade));
+
+  const centerFormed=name==='data'?0:(name==='cluster'?smooth(0,0.35,local):1);
+  const regionFormed=name==='data'?0:(name==='cluster'?smooth(0.55,1,local):1);
+  points.forEach(p=>{
+    const claimed=name==='data'?false:(name==='cluster'?(local>=p.claim):true);
+    p.e.setAttribute('class',claimed?('pt-'+CLUSTERS[p.ci].key):'data-dot');
+    let r=5;
+    if(name==='search'&&p.ci===WIN){ const ord=CLUSTERS[WIN].pts.indexOf(p); const lit=smooth(ord/8,ord/8+0.3,local); r=lerp(5,7.5,lit); }
+    else if(name==='hold'&&p.ci===WIN){ r=7.5; }
+    p.e.setAttribute('r',r);
+    const dim=(atOrAfter('pick')&&p.ci!==WIN)?lerp(1,0.16,name==='pick'?easeInOutCubic(local):1):1;
+    const op=name==='data'?smooth(0,0.6,local):1;
+    p.e.setAttribute('opacity',op*dim*(1-holdFade));
+  });
+  CLUSTERS.forEach((cl,i)=>{
+    const dim=(atOrAfter('pick')&&i!==WIN)?lerp(1,0.16,name==='pick'?easeInOutCubic(local):1):1;
+    cl.region.setAttribute('opacity',regionFormed*dim*(1-holdFade));
+    cl.center.setAttribute('opacity',centerFormed*dim*(1-holdFade));
+  });
+
+  let qx=Q.x,qOp=0;
+  if(name==='enter'){ qx=lerp(Q.x-80,Q.x,easeInOutCubic(local)); qOp=smooth(0,0.3,local); }
+  else if(atOrAfter('enter')){ qx=Q.x; qOp=1; }
+  qdot.setAttribute('cx',qx); qdot.setAttribute('opacity',qOp*(1-holdFade));
+  qLabel.setAttribute('opacity',qOp*(1-holdFade));
+
+  CLUSTERS.forEach((cl,i)=>{
+    let grow=0,op=0;
+    if(name==='compare'){ grow=easeInOutCubic(smooth(i*0.08,i*0.08+0.6,local)); op=smooth(0,0.2,local); }
+    else if(after('compare')){ grow=1; op=(i===WIN)?1:(name==='pick'?1-easeInOutCubic(local):0); }
+    cmpLines[i].setAttribute('x2',lerp(Q.x,cl.c.x,grow));
+    cmpLines[i].setAttribute('y2',lerp(Q.y,cl.c.y,grow));
+    cmpLines[i].setAttribute('opacity',op*(1-holdFade));
+    if(i===WIN){
+      // dashed grey during compare, then the dashes merge to a solid coral line at pick.
+      // use inline style, not setAttribute: a CSS class rule beats presentation attributes.
+      const solid = name==='pick' ? easeInOutCubic(local) : (after('pick') ? 1 : 0);
+      cmpLines[i].style.stroke = lerpColor('#cdd2da','#db9f8d',solid);
+      cmpLines[i].style.strokeWidth = lerp(1.6,2.4,solid);
+      cmpLines[i].style.strokeDasharray = solid>0.97 ? 'none' : `5 ${lerp(4,0,solid)}`;
+      cmpLines[i].style.strokeLinecap = solid>0.5 ? 'round' : 'butt';
+    }
+  });
+
+  let ringOp=0;
+  if(name==='search') ringOp=smooth(0.55,0.8,local); else if(name==='hold') ringOp=1;
+  resRing.setAttribute('opacity',ringOp*(1-holdFade));
+}
+
+window.__virtualTimeMs=null;let startTime=null;
+function renderAt(e){applyFrame(((e%totalDur)+totalDur)%totalDur);}
+window.renderAt=renderAt;
+function frame(now){if(window.__virtualTimeMs!==null){renderAt(window.__virtualTimeMs);requestAnimationFrame(frame);return;}
+  if(startTime===null)startTime=now;applyFrame((now-startTime)%totalDur);requestAnimationFrame(frame);}
+document.getElementById('restart').addEventListener('click',()=>{startTime=null;});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
