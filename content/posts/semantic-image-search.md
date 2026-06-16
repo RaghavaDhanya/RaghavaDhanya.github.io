@@ -1,7 +1,6 @@
 ---
 title: "Semantic Image Search and Contrastive Learning"
 date: 2026-05-14T12:31:51+05:30
-draft: true
 math: true
 tags: ["clip", "openai", "semantic-search", "typesense", "python", "ml", "ai"]
 categories:
